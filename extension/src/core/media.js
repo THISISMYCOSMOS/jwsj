@@ -81,10 +81,14 @@ export async function loadContentInfo(src, contentId) {
       .find((n) => n.getAttribute('method') === 'progressive')?.textContent?.trim();
     if (file && tpl && !/[/\\]/.test(file)) mediaUrl = tpl.replace('[MEDIA_FILE]', file);
   }
-  if (!mediaUrl || !SITE.mediaOrigins.some((o) => mediaUrl.startsWith(`${o}/`)) ||!/\.mp4(\?|$)/i.test(mediaUrl)) {
+  if (!isAllowedMediaUrl(mediaUrl)) {
     throw new Error('지원하지 않는 콘텐츠 형식입니다 (progressive mp4 없음).');
   }
   return { contentId, title, duration, mediaUrl };
+}
+// 이 학교의 mp4 origin 아래 주소만 받는다. origin 뒤의 '/'까지 비교해 'kwcommons.kw.ac.kr.evil.test' 같은 주소를 막는다.
+export function isAllowedMediaUrl(url) {
+  return typeof url === 'string' && SITE.mediaOrigins.some((o) => url.startsWith(`${o}/`)) && /\.mp4(\?|$)/i.test(url);
 }
 
 // 최상위 박스를 머리(최대 16바이트)만 읽으며 건너뛰어 ftyp와 moov 위치를 찾는다.

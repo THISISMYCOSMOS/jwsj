@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSource, fetchWindow, decodeKeyframes } from '../extension/src/core/media.js';
+import { createSource, fetchWindow, decodeKeyframes, isAllowedMediaUrl } from '../extension/src/core/media.js';
+
+test('only mp4 files under the school media origin are accepted', () => {
+  assert.equal(isAllowedMediaUrl('https://kwcommons.kw.ac.kr/contents/a/media_files/mobile/ssmovie.mp4'), true);
+  assert.equal(isAllowedMediaUrl('https://kwcommons.kw.ac.kr/contents/a/ssmovie.mp4?x=1'), true);
+  for (const url of ['https://kwcommons.kw.ac.kr.evil.test/ssmovie.mp4', 'https://kwcommons.kw.ac.kr@evil.test/ssmovie.mp4', 'http://kwcommons.kw.ac.kr/ssmovie.mp4',
+    'https://evil.test/https://kwcommons.kw.ac.kr/ssmovie.mp4', 'https://kwcommons.kw.ac.kr/contents/a/ssmovie.m3u8', null, undefined])
+    assert.equal(isAllowedMediaUrl(url), false, String(url));
+});
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
