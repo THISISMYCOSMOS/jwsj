@@ -1,8 +1,7 @@
-// kwcommons 강의 mp4에서 압축 AAC와 키프레임(슬라이드 후보)을 뽑는다.
+// Xinics Commons(학교별 SITE) 강의 mp4에서 압축 AAC와 키프레임(슬라이드 후보)을 뽑는다.
 // 전제(실측 31강): progressive mp4, H.264 + AAC(44.1/48kHz), 키프레임 약 2초 간격. moov 위치는 앞·끝 모두 있음.
 // 전역 MP4Box(vendor/mp4box.all.js)가 먼저 로드되어 있어야 한다.
-
-const KW = 'https://kwcommons.kw.ac.kr';
+import { SITE } from '../site.js';
 
 const abortError = (signal) => signal?.reason ?? Object.assign(new Error('사용자가 중지함'), { name: 'AbortError' });
 function checkAbort(signal) { if (signal?.aborted) throw abortError(signal); }
@@ -62,7 +61,7 @@ export function createSource(fetchImpl = fetch) {
 
 // content_id → 제목, 길이, mp4 주소
 export async function loadContentInfo(src, contentId) {
-  const xml = await src.getText(`${KW}/viewer/ssplayer/uniplayer_support/content.php?content_id=${encodeURIComponent(contentId)}`);
+  const xml = await src.getText(`${SITE.commonsOrigin}/viewer/ssplayer/uniplayer_support/content.php?content_id=${encodeURIComponent(contentId)}`);
   const doc = new DOMParser().parseFromString(xml, 'text/xml');
   const q = (sel) => doc.querySelector(sel)?.textContent?.trim() ?? '';
   const title = q('content_metadata > title');
@@ -82,7 +81,7 @@ export async function loadContentInfo(src, contentId) {
       .find((n) => n.getAttribute('method') === 'progressive')?.textContent?.trim();
     if (file && tpl && !/[/\\]/.test(file)) mediaUrl = tpl.replace('[MEDIA_FILE]', file);
   }
-  if (!mediaUrl || !mediaUrl.startsWith(`${KW}/`) || !/\.mp4(\?|$)/i.test(mediaUrl)) {
+  if (!mediaUrl || !SITE.mediaOrigins.some((o) => mediaUrl.startsWith(`${o}/`)) ||!/\.mp4(\?|$)/i.test(mediaUrl)) {
     throw new Error('지원하지 않는 콘텐츠 형식입니다 (progressive mp4 없음).');
   }
   return { contentId, title, duration, mediaUrl };

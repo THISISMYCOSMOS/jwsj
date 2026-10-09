@@ -1,6 +1,7 @@
 import {DEFAULT_SETTINGS,validId,cleanSettings,cleanMeta,safeName,classifySender,parseSummary,checkPayload} from './src/core/policy.js';
 import * as store from './src/core/store.js';
 import {SUMMARY_FORMAT} from './src/core/pack.js';
+import {SITE} from './src/site.js';
 
 const SELF=chrome.runtime.getURL('');
 const HOST='com.klas_summarizer.host';
@@ -85,7 +86,7 @@ async function download(id){
   const meta=s.metadata[id]??{},course=safeName(meta.course||'과목 미지정'),title=safeName(r.title);
   const prefix=meta.week?`${meta.week}주차_`:'';
   if(typeof r.url!=='string'||!r.url.startsWith('blob:'+SELF.slice(0,-1)+'/'))throw new Error('다운로드 주소 오류');
-  const downloadId=await chrome.downloads.download({url:r.url,filename:`KLAS요약/${course}/${prefix}${title}.html`,conflictAction:'uniquify',saveAs:false});
+  const downloadId=await chrome.downloads.download({url:r.url,filename:`${SITE.downloadRoot}/${course}/${prefix}${title}.html`,conflictAction:'uniquify',saveAs:false});
   return {downloadId};
 }
 async function enqueue(id,{auto=false,force=false}={}){

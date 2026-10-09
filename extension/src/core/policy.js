@@ -1,4 +1,5 @@
-export const ID_RE = /^[0-9a-f]{8,32}$/i;
+import {SITE} from '../site.js';
+export const ID_RE =/^[0-9a-f]{8,32}$/i;
 export const DEFAULT_SETTINGS = Object.freeze({consent:false, mode:'local', provider:'auto', claudeModel:'claude-opus-5-5', codexModel:'gpt-6-sol', preset:'standard', confirmBeforeSend:true, asrConsent:false, motion:true});
 export const CODEX_MODEL_RE = /^[a-z0-9][a-z0-9.\-]{1,40}$/;
 export const validId = id => typeof id === 'string' && ID_RE.test(id);
@@ -41,9 +42,9 @@ export function classifySender(sender,self,id) {
     return null;
   }
   if(!sender.tab||u.protocol!=='https:')return null;
-  if(u.hostname==='klas.kw.ac.kr'&&u.pathname==='/std/lis/evltn/OnlineCntntsStdPage.do')return 'list';
-  if(u.hostname==='klas.kw.ac.kr'&&(sender.frameId===undefined||sender.frameId===0))return 'status';
-  if(u.hostname==='kwcommons.kw.ac.kr'&&(/^\/em\//.test(u.pathname)||/^\/viewer\/ssplayer\//.test(u.pathname)))return 'player';
+  if(SITE.isListPage(u))return 'list';
+  if(SITE.isStatusPage(u)&&(sender.frameId===undefined||sender.frameId===0))return 'status';
+  if(SITE.isPlayerPage(u))return 'player';
   return null;
 }
 export function parseSummary(raw) {
