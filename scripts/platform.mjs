@@ -58,6 +58,24 @@ export function isLauncherAlive(pidFile, { platform = process.platform } = {}) {
   return r.stdout.includes('chrome-launch');
 }
 
+// 연결 프로그램 실행기에 적어 둘 node 경로. 설치할 때의 node 경로가 나중에 사라지는 환경을 피한다.
+// - fnm: 셸마다 임시 폴더(fnm_multishells)를 만들고 창을 닫으면 지운다 → 실제 설치 경로(realpath)로 바꾼다.
+// - Homebrew: process.execPath가 버전 폴더(Cellar/node/22.1.0)라 brew upgrade 후 사라진다 → 버전 없는 opt/<formula>/bin/node로 바꾼다.
+// 바꾼 경로가 없으면 원래 경로를 그대로 쓴다.
+export function stableNodePath(execPath = process.execPath, { exists = fs.existsSync, realpath = fs.realpathSync.native } = {}) {
+  const s = String(execPath);
+  if (/[\\/]fnm_multishells[\\/]/i.test(s)) {
+    try { const real = realpath(s); if (real && exists(real)) return real; } catch {}
+    return s;
+  }
+  const brew = s.match(/^(.*)\/Cellar\/([^/]+)\/[^/]+\/bin\/node$/);
+  if (brew) {
+    const opt = `${brew[1]}/opt/${brew[2]}/bin/node`;
+    if (exists(opt)) return opt;
+  }
+  return s;
+}
+
 // macOS용 host 실행 스크립트. Chrome이 Finder에서 실행되면 PATH가 짧아 node·claude·codex를 못 찾으므로 보강한다.
 export function macHostScript({ nodePath, hostPath, home }) {
   const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;

@@ -96,18 +96,21 @@ export async function buildReport({ lecture, groups, summary, meta }) {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-${scriptHash}'; base-uri 'none'; form-action 'none'">
 <title>${esc(lecture.title)} – 강의 정리</title>
 <style>
-:root{--bg:#fff;--fg:#1b1b1f;--muted:#6b6b76;--line:#e3e3e8;--card:#fafafb;--accent:#8b1d3f;--mark:#fff1a8}
-@media (prefers-color-scheme:dark){:root{--bg:#141417;--fg:#ececf1;--muted:#9a9aa6;--line:#2c2c33;--card:#1c1c21;--accent:#e07a9a;--mark:#5a4b00}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,-apple-system,"Malgun Gothic",sans-serif}
-main{max-width:1100px;margin:0 auto;padding:24px 16px 64px}h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:28px 0 8px}
+:root{--bg:#f4e9da;--fg:#3f302c;--muted:#7a6259;--line:#ead6c3;--card:#fffaf3;--accent:#c93d6f;--on-accent:#fff;--mark:#fff1a8}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1518;--fg:#f3e9ea;--muted:#b9a3a8;--line:#3a2a30;--card:#261b1f;--accent:#f08cb0;--on-accent:#1d1518;--mark:#5a4b00}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M14 20c-2-4-8-3-8 1 0 4 8 8 8 8s8-4 8-8c0-4-6-5-8-1z' fill='%23e0779c' fill-opacity='.13'/%3E%3Cpath d='M42 46c-1.5-3-6-2.2-6 .8 0 3 6 6 6 6s6-3 6-6c0-3-4.5-3.8-6-.8z' fill='%23e0779c' fill-opacity='.1'/%3E%3C/svg%3E");color:var(--fg);font:15px/1.65 system-ui,-apple-system,"Malgun Gothic",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 64px}h1{font-size:22px;margin:0 0 4px;color:var(--accent)}h2{font-size:17px;margin:28px 0 8px}
+h1::after{content:" ♥" / "";display:inline-block;animation:heart-pop 1.4s ease-in-out infinite}
+@keyframes heart-pop{0%,100%{transform:scale(1)}15%{transform:scale(1.35)}30%{transform:scale(.95)}45%{transform:scale(1.2)}}
+@media (prefers-reduced-motion:reduce){h1::after{animation:none}}
 .meta{color:var(--muted);font-size:13px}.kicker{margin:0 0 2px;color:var(--accent);font-weight:600;font-size:14px}
-.info{display:flex;flex-wrap:wrap;gap:4px 20px;margin:8px 0 0;font-size:13px}.info div{display:flex;gap:6px}.info dt{color:var(--muted)}.info dd{margin:0}.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.info{display:flex;flex-wrap:wrap;gap:4px 20px;margin:8px 0 0;font-size:13px}.info div{display:flex;gap:6px}.info dt{color:var(--muted)}.info dd{margin:0}.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
 .view{position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);z-index:1;display:flex;gap:6px}
 .view button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
-.view button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
-.note-action{display:inline-block;margin-top:12px;padding:8px 16px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-weight:600}.note-help{margin:4px 0 12px;color:var(--muted);font-size:12px}
-.card{border:1px solid var(--line);border-radius:10px;margin:14px 0;overflow:hidden;break-inside:avoid}
-.card header{padding:8px 14px;background:var(--card);border-bottom:1px solid var(--line);font-size:13px}.card header time{color:var(--muted);margin-left:6px}
+.view button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.note-action{display:inline-block;margin-top:12px;padding:8px 16px;background:var(--accent);color:var(--on-accent);border-radius:999px;text-decoration:none;font-weight:600}.note-help{margin:4px 0 12px;color:var(--muted);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:14px 0;overflow:hidden;break-inside:avoid}
+.card header{padding:8px 14px;background:color-mix(in srgb,var(--accent) 8%,var(--card));border-bottom:1px solid var(--line);font-size:13px}.card header time{color:var(--muted);margin-left:6px}
 .body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;padding:14px}
 .img img{width:100%;border-radius:6px;border:1px solid var(--line)}
 .overview,.lecture-summary li{white-space:pre-line}.muted{color:var(--muted)}
@@ -116,7 +119,7 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 .suspect{color:var(--muted);text-decoration:underline wavy;text-decoration-color:var(--accent);cursor:help}
 body[data-view=sum] .card{display:none}body[data-view=raw] .lecture-summary{display:none}body[data-view=raw] .raw h4{margin-top:0}
 @media (max-width:760px){.body{grid-template-columns:1fr}}
-@media print{.view{display:none}.card{page-break-inside:avoid}}
+@media print{.view{display:none}.card{page-break-inside:avoid}body{background:#fff}h1::after{animation:none}}
 </style></head><body data-view="both"><main>
 <p class="kicker">${esc([lecture.course, lecture.professor && `${lecture.professor} 교수`].filter(Boolean).join(' · '))}</p>
 <h1>${lecture.week ? `${esc(lecture.week)}주차 · ` : ''}${esc(lecture.title)}</h1>

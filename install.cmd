@@ -9,6 +9,9 @@ if not exist "scripts\setup.mjs" (
   pause
   exit /b 1
 )
+rem Node.js를 막 설치해 탐색기의 PATH가 아직 갱신되지 않았으면 기본 설치 위치를 직접 쓴다.
+where node.exe >nul 2>&1
+if errorlevel 1 if exist "%ProgramFiles%\nodejs\node.exe" set "PATH=%ProgramFiles%\nodejs;%PATH%"
 where node.exe >nul 2>&1
 if errorlevel 1 (
   echo Node.js LTS가 필요합니다: https://nodejs.org/

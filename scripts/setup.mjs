@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {HOST_NAME as hostName,EXTENSION_ID as extensionId,platformPaths,macHostScript} from './platform.mjs';
+import {HOST_NAME as hostName,EXTENSION_ID as extensionId,platformPaths,macHostScript,stableNodePath} from './platform.mjs';
 
 const source=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const registryKey=`HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\${hostName}`;
@@ -30,7 +30,7 @@ export function checkSource(root=source){
 // manifestPath: Windows는 설치 폴더 안(레지스트리가 가리킴), macOS는 Chrome의 NativeMessagingHosts 폴더.
 // registeredPath: 이미 등록된 대상(Windows는 레지스트리 값, macOS는 기존 manifest의 실행 파일 경로). 우리 것이 아니면 보존하고 중단한다.
 export function validateTarget(root,registeredPath,{manifestPath=path.join(root,hostName+'.json'),expectedRegistered=manifestPath}={}){
-  if(/["%\r\n]/.test(root)||/["%\r\n]/.test(process.execPath))throw Error('지원하지 않는 설치 경로 문자');
+  if(/["%\r\n]/.test(root)||/["%\r\n]/.test(stableNodePath()))throw Error('지원하지 않는 설치 경로 문자');
   const marker=path.join(root,'.klas-summarizer-host');
   if(fs.existsSync(root)&&(!fs.existsSync(marker)||fs.readFileSync(marker,'utf8').trim()!==hostName))throw Error('다른 폴더가 이미 있습니다. 기존 파일을 보존하고 설치를 중단합니다.');
   if(registeredPath&&path.resolve(registeredPath).toLowerCase()!==path.resolve(expectedRegistered).toLowerCase())throw Error('다른 네이티브 호스트가 등록되어 있습니다. 기존 등록을 보존합니다.');
@@ -96,12 +96,12 @@ function install(){
   fs.copyFileSync(path.join(source,'native-host/groq.mjs'),path.join(root,'groq.mjs'));
   if(P.platform==='win32'){
     // UTF-8 is enabled only in this host process; protocol stdout stays free of banners.
-    fs.writeFileSync(launcher,'@echo off\r\nchcp 65001 >nul\r\n"'+process.execPath+'" "%~dp0host.mjs"\r\n');
+    fs.writeFileSync(launcher,'@echo off\r\nchcp 65001 >nul\r\n"'+stableNodePath()+'" "%~dp0host.mjs"\r\n');
     fs.writeFileSync(manifestPath,hostManifest(launcher));
     const result=spawnSync('reg.exe',['add',registryKey,'/ve','/t','REG_SZ','/d',manifestPath,'/f'],{encoding:'utf8',windowsHide:true});
     if(result.error||result.status!==0)throw Error('현재 사용자 네이티브 호스트 등록에 실패했습니다.');
   }else{
-    fs.writeFileSync(launcher,macHostScript({nodePath:process.execPath,hostPath:path.join(root,'host.mjs'),home:os.homedir()}),{mode:0o755});
+    fs.writeFileSync(launcher,macHostScript({nodePath:stableNodePath(),hostPath:path.join(root,'host.mjs'),home:os.homedir()}),{mode:0o755});
     fs.chmodSync(launcher,0o755);
     fs.mkdirSync(P.hostManifestDir,{recursive:true});
     fs.writeFileSync(manifestPath,hostManifest(launcher));
