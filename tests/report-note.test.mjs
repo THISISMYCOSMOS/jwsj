@@ -43,7 +43,7 @@ test('note confirmation in local mode opens settings only on trusted click; fram
   const run=async(framed=false)=>{
     const calls=[],nodes=new Map(),win={};win.self=win;win.top=framed?{}:win;win.addEventListener=()=>{};
     const node=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,parentElement:{},classList:{add(){}},addEventListener(){}});return nodes.get(id);};
-    vm.runInNewContext(code,{window:win,document:{getElementById:node},location:{search:'?id=abcdef1234567890&note=1',reload(){}},URLSearchParams,Intl,setTimeout,clearTimeout,mountCampusScene:()=>({setMotion(){},destroy(){}}),chrome:{runtime:{id:extensionId,sendMessage:async m=>{calls.push(m);return {ok:true,settings:{mode:'local',consent:true}};}}}});
+    vm.runInNewContext(code,{window:win,document:{getElementById:node},location:{search:'?id=abcdef1234567890&note=1',reload(){}},URLSearchParams,Intl,setTimeout,clearTimeout,applyMotion(){},chrome:{runtime:{id:extensionId,sendMessage:async m=>{calls.push(m);return {ok:true,settings:{mode:'local',consent:true}};}}}});
     await new Promise(resolve=>setImmediate(resolve));return {calls,node};
   };
   const local=await run();assert.deepEqual(local.calls.map(x=>x.type),['getState']);

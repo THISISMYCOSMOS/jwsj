@@ -1,13 +1,15 @@
-/* ui.css — 공유 디자인 토큰. 모든 페이지(consent/popup/options/confirm)가 이 파일을 불러와
-   동일한 타이포그래피/색/여백을 쓴다. 버건디는 강조색으로만 쓰고 배경은 중립 톤 유지. */
+/* ui.css — 공유 디자인 토큰. 모든 페이지(consent/sidepanel/options/confirm)가 이 파일을 불러와
+   동일한 타이포그래피/색/여백을 쓴다. 테마: 베이지 배경 + 핑크 포인트 + 하트.
+   --burgundy* 이름은 기존 CSS가 참조하므로 유지하고 값만 핑크로 바꿨다(흰 글자 대비 4.5:1 이상). */
 :root {
-  --burgundy: #7a1f2e;
-  --burgundy-deep: #591521;
-  --ink: #2b2b2b;
-  --ink-soft: #666;
-  --bg: #ffffff;
-  --bg-off: #f7f6f4;
-  --border: #ddd8d2;
+  --burgundy: #c93d6f;
+  --burgundy-deep: #a8325d;
+  --pink-soft: #fde4ec;
+  --ink: #3f302c;
+  --ink-soft: #7a6259;
+  --bg: #fffaf3;
+  --bg-off: #f4e9da;
+  --border: #ead6c3;
   --danger: #b3261e;
   --ok: #3f7a4e;
   --space: 8px;
@@ -16,14 +18,21 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
-  background: var(--bg-off);
+  /* 옅은 핑크 하트 무늬 */
+  background: var(--bg-off) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M14 20c-2-4-8-3-8 1 0 4 8 8 8 8s8-4 8-8c0-4-6-5-8-1z' fill='%23e0779c' fill-opacity='.13'/%3E%3Cpath d='M42 46c-1.5-3-6-2.2-6 .8 0 3 6 6 6 6s6-3 6-6c0-3-4.5-3.8-6-.8z' fill='%23e0779c' fill-opacity='.1'/%3E%3C/svg%3E");
   color: var(--ink);
   font-family: system-ui, "Malgun Gothic", sans-serif;
   font-size: 14px;
   line-height: 1.55;
 }
 h1, h2, h3 { font-weight: 600; margin: 0 0 var(--space); }
-h1 { font-size: 18px; }
+h1 { font-size: 18px; color: var(--burgundy-deep); }
+/* 제목 옆 하트가 뿅뿅 뛴다. 설정의 '애니메이션'을 끄거나 OS의 동작 줄이기를 켜면 멈춘다. */
+h1::after { content: " ♥" / ""; display: inline-block; color: var(--burgundy); animation: heart-pop 1.4s ease-in-out infinite; transform-origin: center; }
+@keyframes heart-pop { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.35); } 30% { transform: scale(0.95); } 45% { transform: scale(1.2); } }
+@keyframes heart-float { 0% { transform: translateY(0) scale(.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-22px) scale(1.1); opacity: 0; } }
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
 h2 { font-size: 16px; }
 p { margin: 0 0 var(--space); }
 .hint { font-size: 12px; color: var(--ink-soft); margin: 4px 0 0; }
@@ -31,7 +40,7 @@ p { margin: 0 0 var(--space); }
 .btn {
   font: inherit;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 999px;
   border: 1px solid transparent;
   cursor: pointer;
   font-weight: 600;
@@ -39,11 +48,12 @@ p { margin: 0 0 var(--space); }
 }
 .btn--primary { background: var(--burgundy); color: #fff; }
 .btn--primary:hover { background: var(--burgundy-deep); }
-.btn--primary:disabled { background: #cbb; cursor: not-allowed; }
+.btn--primary:disabled { background: #e8bfcd; cursor: not-allowed; }
 .btn--ghost { background: var(--bg); border-color: var(--border); color: var(--burgundy-deep); }
 .btn--ghost:hover { background: var(--bg-off); }
 .btn--danger { background: var(--bg); border-color: var(--danger); color: var(--danger); }
 .btn--danger:hover { background: #fbeceb; }
+.btn--primary { box-shadow: 0 2px 0 rgba(168, 50, 93, .25); }
 .btn--sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
 .btn:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
   outline: 2px solid var(--burgundy); outline-offset: 2px;
@@ -55,7 +65,7 @@ p { margin: 0 0 var(--space); }
 .card {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 16px;
 }
 

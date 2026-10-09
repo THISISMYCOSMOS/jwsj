@@ -1,6 +1,5 @@
 /* sidepanel.css — 우측 도킹 사이드패널 전용 레이아웃.
-   ui.css 토큰(색/타이포/버튼)과 campus.css 컴포넌트를 그대로 재사용하고,
-   여기서는 패널 폭(320~480px)에 맞는 배치만 정의한다. 그라디언트/새 장식 없음. */
+   ui.css 토큰(색/타이포/버튼)을 그대로 재사용하고, 여기서는 패널 폭(320~480px)에 맞는 배치만 정의한다. */
 
 html, body {
   width: 100%;
@@ -26,9 +25,16 @@ html, body {
   gap: var(--space);
 }
 .sp-header h1 {
-  font-size: 15px;
+  font-size: 17px;
   margin: 0;
 }
+/* 제목 위로 작은 하트가 번갈아 떠오른다(장식, 화면 낭독 제외). */
+.love-title { position: relative; letter-spacing: .02em; }
+.love-hearts { position: absolute; left: 0; right: 0; top: -2px; height: 0; pointer-events: none; }
+.love-hearts i { position: absolute; font-style: normal; font-size: 11px; color: var(--burgundy); opacity: 0; animation: heart-float 2.4s ease-out infinite; }
+.love-hearts i:nth-child(1) { left: 8%; }
+.love-hearts i:nth-child(2) { left: 42%; animation-delay: .8s; font-size: 9px; }
+.love-hearts i:nth-child(3) { left: 76%; animation-delay: 1.6s; }
 
 .sp-banner {
   margin: 0;
@@ -40,7 +46,7 @@ html, body {
   border: 1px solid var(--border);
   color: var(--ink-soft);
 }
-.sp-banner[data-state="off"] { background: #f7e9e3; color: var(--burgundy-deep); }
+.sp-banner[data-state="off"] { background: var(--pink-soft); color: var(--burgundy-deep); }
 .sp-banner[data-state="ok"] { color: var(--ok); }
 .sp-banner--error {
   background: #fbeceb;
@@ -114,14 +120,6 @@ html, body {
   color: var(--ink-soft);
 }
 
-/* 캠퍼스 장면: 폭에 비례해 커지지 않도록 최대 높이를 110px로 고정한다. */
-.sp-campus { display: flex; justify-content: center; }
-.sp-campus .campus-scene {
-  width: 100%;
-  max-width: 352px;
-  max-height: 110px;
-}
-
 .sp-list {
   list-style: none;
   margin: 0;
@@ -187,7 +185,7 @@ html, body {
 }
 .sp-mini-btn:hover { background: var(--burgundy-deep); }
 .sp-mini-btn:focus-visible { outline: 2px solid var(--burgundy-deep); outline-offset: 2px; }
-.sp-mini-btn:disabled { background: #cbb; cursor: not-allowed; }
+.sp-mini-btn:disabled { background: #e8bfcd; cursor: not-allowed; }
 
 .sp-empty {
   font-size: 12px;
@@ -198,6 +196,6 @@ html, body {
 }
 
 /* 처리 중 실시간 확인: 최근 받아쓴 문장 */
-.sp-item__live { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: var(--paper-2, rgba(128,82,93,.08)); font-size: 11px; }
+.sp-item__live { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: var(--paper-2, rgba(201,61,111,.08)); font-size: 11px; }
 .sp-item__live-head { color: var(--ink-soft); margin-bottom: 2px; }
 .sp-item__live-body { white-space: pre-line; line-height: 1.5; max-height: 4.5em; overflow: hidden; }

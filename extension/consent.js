@@ -1,6 +1,5 @@
 // consent.js — 최초 1회 설정 화면. consent=true가 저장되면 팝업은 다시 이 화면을 띄우지 않는다.
 // 설정에서 "동의 화면 다시 보기"로 재열람할 수 있지만, 그때도 팝업이 강제로 다시 열리지는 않는다.
-import { mountCampusScene } from './campus.js';
 
 function hasRuntime() {
   return typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.id;
@@ -58,7 +57,6 @@ async function onContinue() {
 }
 
 function init() {
-  mountCampusScene(el('campusHost'), { state: 'study', motion: true, compact: true });
 
   document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener('change', updateVisibility));
   updateVisibility();

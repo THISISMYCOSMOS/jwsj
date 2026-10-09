@@ -46,7 +46,7 @@ HTML에 표시하는 받아쓰기 모델명은 호스트가 응답한 `result.mo
 | `src/core/store.js` | IndexedDB `klas-summarizer`: lectures·segments·slides·summaries |
 | `src/core/pack.js · report.js` | AI 입력 구성(`SYSTEM`, `SUMMARY_FORMAT=lecture-points-v2`), 자체 완결 HTML(CSP 메타, 교정은 발화 단위) |
 | `extension/content/*` | `klas-list-main.js`(MAIN 월드, Vue 읽기 전용) → `klas-list.js`(닫힌 Shadow DOM 컨트롤: 자동 처리·지금 요약·HTML 받기·상태), `klas-status.js`, `kw-player.js` |
-| `extension/{sidepanel,options,consent,confirm}.*`, `campus.*`, `ui.css`, `note-launch.*` | UI. 설정에서 Groq 키 저장·삭제·연결 테스트(키는 `options.html` 발신자만 관리 가능) |
+| `extension/{sidepanel,options,consent,confirm}.*`, `ui.css`, `motion.js`, `note-launch.*` | UI(베이지·핑크 하트 테마, 패널 제목 "지우사랑해", 광운대 캠퍼스 장면은 2026-10-09 삭제). 설정에서 Groq 키 저장·삭제·연결 테스트(키는 `options.html` 발신자만 관리 가능) |
 | `native-host/host.mjs · groq.mjs · host.bat` | 네이티브 호스트. 명령: `groqStatus·groqSaveKey·groqRemoveKey·groqTest·transcribeGroq·codexModels·detect·test·summarize`. Groq 키는 호스트 폴더의 `groq-config.json`(평문 JSON)에 저장하며 응답에 포함하지 않는다. 환경변수 `GROQ_API_KEY`도 대체 경로로 허용 |
 | `install.cmd` → `scripts/setup.mjs` | 정식 설치 경로(§7). `install.ps1`은 배포 ZIP에 포함되지 않는 옛 경로다(2026-10-05에 빠져 있던 `groq.mjs` 복사를 추가함, 실행 검증은 하지 않음) |
 | `tests/*.test.mjs`, `tools/` | Node 테스트(`npm test`). `tools/engine-harness.html`은 구 브라우저 Whisper 시절 하네스(`asrModel` 인자 등 옛 구조 기준)이며 현재 구조에서 동작하는지는 확인하지 않았다 |

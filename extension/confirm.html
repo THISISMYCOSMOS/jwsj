@@ -4,11 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>klasnote — 전송 확인</title>
-<link rel="stylesheet" href="campus.css" />
 <link rel="stylesheet" href="ui.css" />
 <style>
   .wrap { max-width: 520px; margin: 0 auto; padding: 20px 16px 32px; }
-  .campus-host { margin-bottom: var(--space); max-width: 260px; }
   .card { margin: 10px 0; }
   .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; }
   .kv dt { color: var(--ink-soft); }
@@ -17,7 +15,7 @@
   table.estimate th, table.estimate td { text-align: left; padding: 5px 4px; border-bottom: 1px solid var(--border); }
   table.estimate tr:last-child th, table.estimate tr:last-child td { font-weight: 700; border-bottom: none; }
   .notice { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
-  .notice--cloud { background: #fde7df; color: var(--burgundy-deep); }
+  .notice--cloud { background: var(--pink-soft); color: var(--burgundy-deep); }
   .notice--local { background: #e6efe2; color: var(--ok); }
   .notice--muted { background: var(--bg-off); color: var(--ink-soft); }
   .actions { display: flex; gap: var(--space); justify-content: center; margin-top: 16px; }
@@ -26,14 +24,12 @@
   .status-line[data-k="ok"] { color: var(--ok); }
   .fine { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
   body.in-panel .wrap { padding: 10px; }
-  body.in-panel .campus-host { display: none; }
   body.in-panel #backBtn { margin-bottom: 10px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <button type="button" id="backBtn" class="btn btn--ghost btn--sm" hidden>강의 목록으로</button>
-  <div id="campusHost" class="campus-host" aria-label="캠퍼스 장면"></div>
 
   <h1 id="pageTitle">요약 전송 확인</h1>
   <p id="loadingMsg" class="fine">불러오는 중…</p>

@@ -1,5 +1,5 @@
 // options.js — 설정 화면 로직. 백그라운드와는 chrome.runtime.sendMessage({target:'bg',...})로만 통신한다.
-import { mountCampusScene } from './campus.js';
+import { applyMotion } from './motion.js';
 
 const ALLOWED = {
   provider: ['auto', 'claude', 'codex'],
@@ -60,19 +60,11 @@ function askConfirm(title, msg) {
   });
 }
 
-let scene;
 let latest = { settings: { ...DEFAULT_SETTINGS }, statuses: {}, opened: {}, metadata: {} };
 let library = { items: [] };
 // 사용자가 저장하지 않은 채 설정 폼을 고치고 있는 동안에는 주기적 refresh가 그 입력을 덮어쓰지 않게 막는다.
 let formDirty = false;
 function markFormDirty() { formDirty = true; }
-
-function overallMascotState() {
-  const vals = Object.values(latest.statuses || {});
-  if (vals.some((s) => s.state === 'running' || s.state === 'queued' || s.state === 'summarizing')) return 'walk';
-  if (vals.some((s) => s.state === 'awaiting_confirmation')) return 'study';
-  return 'idle';
-}
 
 // 실제 연결 성공/실패 여부는 refresh()의 getState 응답에 따라 갱신한다(미리보기 모드만 여기서 처리).
 function applyConnBanner() {
@@ -284,7 +276,7 @@ async function refresh() {
     if (!formDirty) {
       fillSettingsForm(latest.settings);
       renderConsent(latest.settings);
-      scene?.setMotion(latest.settings.motion !== false);
+      applyMotion(latest.settings.motion !== false);
     }
   }
   const libRes = await callBg('getLibrary');
@@ -292,7 +284,6 @@ async function refresh() {
     library = libRes;
     renderLibrary();
   }
-  scene?.setState(overallMascotState());
 }
 
 function gatherSettingsFromForm() {
@@ -353,7 +344,7 @@ function wireEvents() {
     formDirty = false;
     fillSettingsForm(latest.settings);
     renderConsent(latest.settings);
-    scene?.setMotion(latest.settings.motion !== false);
+    applyMotion(latest.settings.motion !== false);
     showTemp(el('saveResult'), '저장했습니다.');
   });
 
@@ -365,7 +356,7 @@ function wireEvents() {
   el('confirmBeforeSend').addEventListener('change', markFormDirty);
   el('motionToggle').addEventListener('change', () => {
     markFormDirty();
-    scene?.setMotion(el('motionToggle').checked);
+    applyMotion(el('motionToggle').checked);
   });
 
   el('testBtn').addEventListener('click', async (e) => {
@@ -395,11 +386,6 @@ function wireEvents() {
 }
 
 function init() {
-  scene = mountCampusScene(el('campusHost'), {
-    state: 'idle',
-    motion: true,
-    onToggleMotion: (on) => { el('motionToggle').checked = on; markFormDirty(); },
-  });
   applyConnBanner();
   wireEvents();
   if (hasRuntime()) {
@@ -408,7 +394,6 @@ function init() {
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) refresh();
     });
-    window.addEventListener('pagehide', () => { scene?.destroy(); });
   } else {
     fillSettingsForm(DEFAULT_SETTINGS);
     renderConsent(DEFAULT_SETTINGS);

@@ -1,5 +1,5 @@
 // confirm.js — 전송 확인 화면. background가 confirm.html?id=<contentId>&force=<bool>로 연다.
-import { mountCampusScene } from './campus.js';
+import { applyMotion } from './motion.js';
 
 function hasRuntime() {
   return typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.id;
@@ -24,7 +24,6 @@ const force = params.get('force') === 'true' || params.get('force') === '1';
 const inPanel=params.get('panel')==='1';
 const noteOnly=params.get('note')==='1';
 
-let scene;
 let requestId = null;
 let ready = null; // 마지막 prepareSummary 성공 응답
 let destroyed = false;
@@ -86,7 +85,6 @@ function renderReady(res, settings, host) {
     setConfirmAction('AI로 보내고 요약 만들기', doSummarize);
   }
 
-  scene?.setState('study');
 }
 
 let polling = false; // 첫 요청 뒤에는 상태 확인만 한다(처리 재시작 금지)
@@ -122,7 +120,6 @@ async function doSummarize() {
   confirmBtn.disabled = true;
   cancelBtn.disabled = true;
   setStatus('처리 중…');
-  scene?.setState('walk');
 
   const res = await callBg('summarize', { contentId, requestId });
   if (res.ok === false) {
@@ -141,13 +138,11 @@ async function doSummarize() {
         await pollPrepare(stateRes.settings, stateRes.host, false);
       });
     }
-    scene?.setState('study');
-    return;
+      return;
   }
 
   sentOnce = true;
   setStatus('완료되었습니다. 다운로드가 시작됩니다.', 'ok');
-  scene?.setState('success', { holdMs: 5000 });
   cancelBtn.disabled = false;
   cancelBtn.textContent = '닫기';
   setConfirmAction('다운로드 다시 받기', doRedownload);
@@ -179,7 +174,6 @@ async function returnToList(){
 function init() {
   if(window.top!==window.self){fail('요약 확인 화면은 새 탭에서 열어 주세요.');return;}
   if(inPanel){document.body.classList.add('in-panel');el('backBtn').hidden=false;el('backBtn').addEventListener('click',e=>{if(e.isTrusted)returnToList();});}
-  if(!inPanel)scene = mountCampusScene(el('campusHost'), { state: 'study', motion: true, compact: true });
 
   if (!contentId) {
     fail('잘못된 접근입니다 (강의 id 없음).');
@@ -195,7 +189,7 @@ function init() {
   callBg('getState').then((stateRes) => {
     const settings = stateRes.ok === false ? {} : stateRes.settings;
     const host = stateRes.ok === false ? undefined : stateRes.host;
-    scene?.setMotion(settings?.motion !== false);
+    applyMotion(settings?.motion !== false);
     if(noteOnly&&(!settings.consent||settings.mode!=='ai')){
       el('loadingMsg').textContent='';el('content').hidden=false;
       el('lec-h').parentElement.hidden=true;el('est-h').parentElement.hidden=true;
@@ -214,7 +208,6 @@ function init() {
     if (inPanel) chrome.runtime.sendMessage({ target: 'bg', type: 'resetPanel' }).catch(() => {});
     destroyed = true;
     if (pendingPrepareTimer) { clearTimeout(pendingPrepareTimer); pendingPrepareTimer = null; }
-    scene?.destroy();
   });
 }
 

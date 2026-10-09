@@ -19,11 +19,6 @@ html, body { min-width: 360px; }
   font-size: 12px;
 }
 
-.campus-host {
-  margin-bottom: 14px;
-  max-width: 640px;
-}
-
 .conn-banner {
   margin: 0 0 16px;
   padding: 8px 12px;
@@ -35,7 +30,7 @@ html, body { min-width: 360px; }
   font-weight: 600;
 }
 .conn-banner[data-state="ok"] { background: #eef3ea; border-color: var(--ok); color: var(--ok); }
-.conn-banner[data-state="off"] { background: #f7e9e3; border-color: var(--burgundy); }
+.conn-banner[data-state="off"] { background: var(--pink-soft); border-color: var(--burgundy); }
 
 .cards {
   display: flex;

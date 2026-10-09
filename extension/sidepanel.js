@@ -1,7 +1,7 @@
 // sidepanel.js — 우측 도킹 사이드패널. options.js와 같은 bg 메시지 계약을 쓰되,
 // 강의별 상태(대기/진행/확인/완료/오류)를 더 자세히 보여준다.
 // 폴링 없음: stateChanged 브로드캐스트, storage 변경(화면이 보일 때만), visibilitychange에서만 갱신한다.
-import { mountCampusScene } from './campus.js';
+import { applyMotion } from './motion.js';
 
 const STATUS_LABEL = {
   queued: '대기 중',
@@ -34,7 +34,6 @@ async function callBg(type, payload = {}) {
 
 function el(id) { return document.getElementById(id); }
 
-let scene;
 let helpOpen = false;
 const pending = new Set(); // 응답 대기 중인 contentId (중복 클릭 방지)
 
@@ -61,14 +60,6 @@ function openConsentOnce() {
 
 function modeLabel(settings) {
   return settings?.mode==='ai'?'AI 모드 · 내 계정 사용량':'로컬 전용';
-}
-
-function mascotStateFor(statuses) {
-  const vals = Object.values(statuses || {});
-  if (vals.some((s) => ['running', 'queued', 'summarizing'].includes(s?.state))) return 'walk';
-  if (vals.some((s) => ['awaiting_confirmation', 'done'].includes(s?.state))) return 'study';
-  if (vals.some((s) => s?.state === 'complete')) return 'success';
-  return 'idle';
 }
 
 function actionFor(contentId, status) {
@@ -258,8 +249,7 @@ async function refresh() {
   el('mainView').hidden = needsSetup;
 
   if (needsSetup) {
-    scene?.setMotion(settings.motion !== false);
-    scene?.setState('idle');
+    applyMotion(settings.motion !== false);
     return;
   }
 
@@ -285,8 +275,7 @@ async function refresh() {
     }
   }
 
-  scene?.setMotion(settings.motion !== false);
-  scene?.setState(mascotStateFor(statuses));
+  applyMotion(settings.motion !== false);
 }
 
 let onRuntimeMessage = null;
@@ -294,19 +283,6 @@ let onStorageChanged = null;
 let onVisibility = null;
 
 function init() {
-  scene = mountCampusScene(el('campusHost'), {
-    state: 'idle', motion: true, compact: true,
-    onToggleMotion: async (motion) => {
-      const res = await callBg('saveSettings', { settings: { motion } });
-      if (res.ok === false) {
-        showError(res.error || '모션 설정을 저장하지 못했어요.');
-        await refresh();
-        return;
-      }
-      scene?.setMotion(res.settings?.motion !== false);
-    },
-  });
-
   el('settingsBtn').addEventListener('click', (e) => { if (e.isTrusted) openOptions(); });
   el('setupBtn').addEventListener('click', (e) => { if (e.isTrusted) openConsentOnce(); });
   el('helpBtn').addEventListener('click', (e) => { if (e.isTrusted) toggleHelp(!helpOpen); });
@@ -326,7 +302,6 @@ function init() {
     onVisibility = () => { if (!document.hidden) refresh(); };
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', () => {
-      scene?.destroy();
       if (onRuntimeMessage) chrome.runtime.onMessage?.removeListener(onRuntimeMessage);
       if (onStorageChanged) chrome.storage?.onChanged?.removeListener(onStorageChanged);
       if (onVisibility) document.removeEventListener('visibilitychange', onVisibility);
