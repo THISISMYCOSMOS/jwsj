@@ -317,9 +317,15 @@ function wireEvents() {
     const key=el('groqApiKey').value.trim();el('groqApiKey').value='';
     let r=key?await callBg('saveGroqKey',{apiKey:key}):await callBg('groqStatus');
     if(r.ok===false||!r.configured){el('groqState').textContent=r.error||'API 키를 입력하세요.';return;}
-    r=await callBg('saveSettings',{settings:{asrConsent:el('asrConsent').checked}});
+    const consent=el('asrConsent').checked;
+    r=await callBg('saveSettings',{settings:{asrConsent:consent}});
     if(r.ok===false){el('groqState').textContent=r.error;return;}
-    latest.settings={...latest.settings,...r.settings};el('groqState').textContent='키·음성 전송 동의를 저장했습니다. 연결 테스트로 확인하세요.';
+    latest.settings={...latest.settings,...r.settings};
+    if(!consent){el('groqState').textContent='키를 저장했습니다. 받아쓰기를 하려면 "강의 음성을 Groq로 보내 받아쓰는 데 동의합니다"에 체크하고 다시 저장하세요.';return;}
+    // 잘못 복사한 키를 바로 알 수 있게 저장 직후 연결을 확인한다(Groq 모델 목록 조회, 음성 한도 사용 없음).
+    el('groqState').textContent='저장했습니다. Groq 연결 확인 중…';
+    const t=await callBg('testGroq');
+    el('groqState').textContent=t.ok===false?'키는 저장했지만 연결 확인에 실패했습니다: '+t.error:'저장 완료 · Groq 연결 성공. 강의 목록에서 "지금 요약"을 누르세요.';
   });
   el('testGroq').addEventListener('click',async e=>{if(!e.isTrusted)return;el('groqState').textContent='Groq 연결 확인 중…';const r=await callBg('testGroq');el('groqState').textContent=r.ok===false?'연결 실패: '+r.error:'Groq 연결 성공 · '+r.model+' 사용 가능. 음성 인식 품질은 실제 강의 처리 후 확인할 수 있습니다.';});
   el('removeGroqKey').addEventListener('click',async e=>{if(!e.isTrusted)return;el('groqApiKey').value='';const r=await callBg('removeGroqKey');el('groqState').textContent=r.ok===false?r.error:r.configured?'파일의 키는 삭제됐지만 환경 변수 키가 남아 있습니다.':'Groq 키를 삭제했습니다.';});

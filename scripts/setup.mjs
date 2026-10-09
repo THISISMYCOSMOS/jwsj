@@ -9,6 +9,12 @@ const source=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const registryKey=`HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\${hostName}`;
 const required=['extension/manifest.json','extension/sidepanel.html','extension/vendor/mp4box.all.js','native-host/host.mjs','native-host/groq.mjs'];
 
+// 연결 프로그램(groq.mjs)은 Node 18부터 기본 제공되는 fetch·FormData·Blob을 쓴다. 더 낮으면 설치는 되지만 받아쓰기가 실패한다.
+export function checkNode(version=process.versions.node){
+  const major=Number(String(version).split('.')[0]);
+  if(!(major>=18))throw Error(`Node.js 18 이상이 필요합니다(현재 ${version}). https://nodejs.org/ 에서 LTS를 설치한 뒤 다시 실행하세요.`);
+  return major;
+}
 function inspectTree(file){
   const stat=fs.lstatSync(file);
   if(stat.isSymbolicLink())throw Error('심볼릭 링크를 포함한 설치 폴더는 지원하지 않습니다.');
@@ -123,6 +129,7 @@ function uninstall(){
 
 function main(){
   if(process.argv.includes('--uninstall')){uninstall();return;}
+  checkNode();
   const checked=checkSource();
   if(process.argv.includes('--check')){console.log(`설치 묶음 검사 통과: ${checked.files}개 필수 파일, 버전 ${checked.version}. 설치·등록은 수행하지 않았습니다.`);return;}
   install();

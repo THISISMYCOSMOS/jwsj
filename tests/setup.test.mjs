@@ -2,9 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {validateTarget,checkSource} from '../scripts/setup.mjs';
+import {validateTarget,checkSource,checkNode} from '../scripts/setup.mjs';
 const root=path.resolve(import.meta.dirname,'../../installer-fixtures');
 fs.mkdirSync(root,{recursive:true});
+test('installer requires Node 18+ because the Groq host uses built-in fetch and FormData',()=>{
+  for(const v of ['16.20.2','17.9.1','garbage'])assert.throws(()=>checkNode(v),/Node\.js 18 이상이 필요합니다/);
+  for(const v of ['18.0.0','20.11.1','24.14.1'])assert.equal(checkNode(v),Number(v.split('.')[0]));
+});
 test('installer rejects missing bundled dependencies before installation writes',()=>{
   assert.throws(()=>checkSource(root),/설치 파일 누락/);
 });

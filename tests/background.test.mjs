@@ -5,29 +5,29 @@ import {DEFAULT_SETTINGS,classifySender,safeName,parseSummary,cleanSettings,chec
 
 const id='0123456789abcdef',ext='klihhclhnhhmldcbnkpampimkjafmbdm',self=`chrome-extension://${ext}/`;
 const ui={id:ext,url:self+'confirm.html?id='+id,tab:{id:1}};
-let nativeFail=null;
+let nativeFail=null,groqConfigured=true,optionsOpens=0,hostMissing=false;
 let data,nativeCount,downloads,cache,pack,engineCount,nativeDelay=5,downloadFailures=0,panelOpens=[],lectureState='done',enqueueCount=0;
 const clone=v=>structuredClone(v);
 const summary={overview:'개요',slides:[{s:1,summary:['핵심'],comment:'설명'}],exam:['점검'],corrections:[]};
-function reset(){data={settings:{...DEFAULT_SETTINGS,consent:true,asrConsent:true,mode:'ai',provider:'claude'},opened:{[id]:1},statuses:{},metadata:{[id]:{course:'과목',title:'강의'}}};nativeCount=0;downloads=0;cache=null;engineCount=0;pack={prompt:'강의: 테스트',images:[],slideCount:1,estimate:{total:2000}};}
+function reset(){data={settings:{...DEFAULT_SETTINGS,consent:true,asrConsent:true,mode:'ai',provider:'claude'},opened:{[id]:1},statuses:{},metadata:{[id]:{course:'과목',title:'강의'}}};groqConfigured=true;hostMissing=false;nativeCount=0;downloads=0;cache=null;engineCount=0;pack={prompt:'강의: 테스트',images:[],slideCount:1,estimate:{total:2000}};}
 reset();
 globalThis.chrome={
   storage:{local:{get:async()=>clone(data),set:async v=>{data=clone(v);}}},
-  runtime:{id:ext,getURL:p=>self+p,lastError:null,onMessage:{addListener(){}},onInstalled:{addListener(){}},
+  runtime:{id:ext,getURL:p=>self+p,lastError:null,openOptionsPage:async()=>{optionsOpens++;},onMessage:{addListener(){}},onInstalled:{addListener(){}},
     getContexts:async()=>[{documentUrl:self+'offscreen.html'}],
     sendMessage:async m=>{
       if(m.target!=='offscreen')return;
       engineCount++;
       switch(m.cmd){case 'pauseQueue':return {ok:true};case 'ping':return {ok:true,gpu:true};case 'lecture':return {ok:true,item:{state:lectureState,title:'테스트'}};case 'enqueue':enqueueCount++;return {ok:true,queued:true};case 'getSummary':return {ok:true,item:cache};case 'pack':return {ok:true,...clone(pack)};case 'saveSummary':cache=clone(m.item);return {ok:true};case 'report':return lectureState==='missing'?{ok:false,error:'아직 받아쓰기가 끝나지 않았습니다.'}:{ok:true,url:'blob:'+self+'abc',title:'CON'};default:throw Error('unexpected engine command '+m.cmd);}
     },
-    connectNative(){let onMessage,onDisconnect,timer;return {onMessage:{addListener(fn){onMessage=fn;}},onDisconnect:{addListener(fn){onDisconnect=fn;}},disconnect(){clearTimeout(timer);onDisconnect?.();},postMessage(m){nativeCount++;timer=setTimeout(()=>onMessage(m.cmd==='groqStatus'?{ok:true,configured:true}:m.cmd==='transcribeGroq'?{ok:true,segments:[]}:m.cmd==='summarize'&&nativeFail?{ok:false,error:nativeFail}:{ok:true,text:JSON.stringify(summary),usage:{input:42}}),nativeDelay);}};},
+    connectNative(){let onMessage,onDisconnect,timer;return {onMessage:{addListener(fn){onMessage=fn;}},onDisconnect:{addListener(fn){onDisconnect=fn;}},disconnect(){clearTimeout(timer);onDisconnect?.();},postMessage(m){nativeCount++;if(hostMissing){timer=setTimeout(()=>{chrome.runtime.lastError={message:'Specified native messaging host not found.'};onDisconnect();chrome.runtime.lastError=null;},nativeDelay);return;}timer=setTimeout(()=>onMessage(m.cmd==='groqStatus'?{ok:true,configured:groqConfigured}:m.cmd==='transcribeGroq'?{ok:true,segments:[]}:m.cmd==='summarize'&&nativeFail?{ok:false,error:nativeFail}:{ok:true,text:JSON.stringify(summary),usage:{input:42}}),nativeDelay);}};},
   },
   downloads:{download:async args=>{assert.match(args.filename,/KLAS요약\/과목\/_CON\.html$/);if(downloadFailures){downloadFailures--;throw Error('download failed');}downloads++;return downloads;}},
   offscreen:{createDocument:async()=>{},closeDocument:async()=>{}},tabs:{create:async()=>({id:2})}
 };
 let panelPaths=[];
 chrome.sidePanel={setPanelBehavior:async()=>{},open:async options=>{panelOpens.push(options);},setOptions:async options=>{panelPaths.push(options.path);}};
-const {route,friendlyError}=await import('../extension/background.js');
+const {route,friendlyError,nativeHostError}=await import('../extension/background.js');
 const send=(type,extra={})=>route({type,...extra},ui);
 
 test('strict sender routes reject external and lookalike pages',()=>{
@@ -199,6 +199,26 @@ test('audio consent is required for initial enqueue and every native chunk',asyn
  await assert.rejects(send('startProcessing',{contentId:id}),/Groq.*동의/);
  await assert.rejects(route({type:'transcribeAudio',contentId:id},{id:ext,url:self+'offscreen.html'}),/동의/);
  assert.equal(nativeCount,before);
+});
+test('a missing Groq key or audio consent opens the settings page from the list button',async()=>{
+ const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:15}};
+ reset();data.settings.asrConsent=false;let opens=optionsOpens;
+ await assert.rejects(route({type:'startProcessing',contentId:id},listSender),/Groq 음성 전송 동의/);
+ assert.equal(optionsOpens,opens+1);
+ reset();groqConfigured=false;opens=optionsOpens;const queued=enqueueCount;
+ await assert.rejects(route({type:'startProcessing',contentId:id},listSender),/API 키를 저장/);
+ assert.equal(optionsOpens,opens+1);assert.equal(enqueueCount,queued,'nothing is queued without a key');
+ reset();opens=optionsOpens;await route({type:'startProcessing',contentId:id},listSender);
+ assert.equal(optionsOpens,opens,'a configured key does not open settings');
+});
+test('native host connection failures are explained in Korean with the raw message kept',async()=>{
+ assert.match(nativeHostError('Specified native messaging host not found.'),/^연결 프로그램이 설치되지 않았어요\..*install.*\(원문: Specified native messaging host not found\.\)$/);
+ assert.match(nativeHostError('Access to the specified native messaging host is forbidden.'),/^연결 프로그램이 이 확장을 허용하지 않아요/);
+ for(const raw of ['Native host has exited.','Error when communicating with the native messaging host.','Failed to start native messaging host.'])assert.match(nativeHostError(raw),/^연결 프로그램이 실행되지 않았어요\..*Node\.js LTS/);
+ assert.equal(nativeHostError('다른 오류'),'다른 오류');
+ reset();hostMissing=true;
+ await assert.rejects(route({type:'groqStatus'},{id:ext,url:self+'options.html'}),/연결 프로그램이 설치되지 않았어요/);
+ hostMissing=false;
 });
 test('cancellation during storage permission check never starts a late remote request',async()=>{
  reset();const original=chrome.storage.local.get;let release;

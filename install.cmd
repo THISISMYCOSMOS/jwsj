@@ -2,6 +2,13 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 rem 평소 쓰는 Chrome용 설치: AI 연결 프로그램을 등록하고 확장 폴더를 준비한다. 별도 Chrome 창은 띄우지 않는다.
+rem ZIP 안에서 바로 실행하면 이 파일만 임시 폴더로 풀려 나머지 파일이 없다.
+if not exist "scripts\setup.mjs" (
+  echo 압축을 풀지 않은 상태에서 실행했습니다.
+  echo 받은 ZIP을 마우스 오른쪽 버튼 - [모두 압축 풀기]로 푼 뒤, 풀린 폴더의 install.cmd를 실행하세요.
+  pause
+  exit /b 1
+)
 where node.exe >nul 2>&1
 if errorlevel 1 (
   echo Node.js LTS가 필요합니다: https://nodejs.org/

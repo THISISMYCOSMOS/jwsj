@@ -27,7 +27,7 @@ export function nativeCall(message,{signal}={}){
       signal?.addEventListener('abort',abort,{once:true});
       port=chrome.runtime.connectNative(HOST);
       port.onMessage.addListener(response=>response?.ok?finish(null,response):finish(Object.assign(new Error(response?.error||'네이티브 호스트 오류'),{code:response?.code,retryAt:response?.retryAt})));
-      port.onDisconnect.addListener(()=>{const e=chrome.runtime.lastError;finish(new Error(e?.message||'네이티브 호스트 연결이 끊겼습니다. 설치 상태를 확인하세요.'));});
+      port.onDisconnect.addListener(()=>{const e=chrome.runtime.lastError;finish(new Error(e?.message?nativeHostError(e.message):'네이티브 호스트 연결이 끊겼습니다. 설치 상태를 확인하세요.'));});
       port.postMessage(message);
     }catch(e){finish(e);}
   });
@@ -71,6 +71,14 @@ export function friendlyError(message){
   if(/claude/i.test(text)&&/does not support this model|newer is required|claude update/i.test(text))return 'Claude Code가 오래되어 선택한 모델을 쓸 수 없습니다. 터미널에서 claude update를 실행한 뒤 다시 시도하세요. (원문: '+text.slice(0,160)+')';
   return text;
 }
+// Chrome이 연결 프로그램(네이티브 호스트)을 못 띄울 때 주는 영어 오류를 설치 안내로 바꾼다(원문은 뒤에 남긴다).
+export function nativeHostError(message){
+  const text=String(message||''),raw=' (원문: '+text.slice(0,160)+')';
+  if(/native messaging host not found/i.test(text))return '연결 프로그램이 설치되지 않았어요. 압축을 푼 폴더의 install을 탐색기(Mac은 터미널)에서 직접 다시 실행하세요. 다른 앱 안에서 실행하면 Chrome이 찾지 못해요.'+raw;
+  if(/forbidden/i.test(text))return '연결 프로그램이 이 확장을 허용하지 않아요. install이 만든 extension 폴더를 Chrome에 로드했는지 확인하고 install을 다시 실행하세요.'+raw;
+  if(/native host has exited|failed to start native messaging host|error when communicating with the native messaging host/i.test(text))return '연결 프로그램이 실행되지 않았어요. Node.js를 지웠거나 다시 설치했다면 Node.js LTS를 설치한 뒤 install을 다시 실행하세요.'+raw;
+  return text;
+}
 async function download(id){
   const s=await allowed(id);
   const cached=await engine('getSummary',{contentId:id});
@@ -92,9 +100,9 @@ async function download(id){
 async function enqueue(id,{auto=false,force=false}={}){
   const s=await allowed(id);deleted.delete(id);
   if(s.statuses[id]?.state==='summarizing')throw new Error('현재 AI 요약 중입니다.');
-  if(!s.settings.asrConsent)throw new Error('설정에서 Groq 음성 전송 동의를 확인하세요.');
+  if(!s.settings.asrConsent)throw Object.assign(new Error('설정에서 Groq 음성 전송 동의를 확인하세요.'),{code:'GROQ_SETUP'});
   const groq=await nativeCall({cmd:'groqStatus'});
-  if(!groq.configured)throw new Error('설정에서 Groq Free 계정의 API 키를 저장하세요.');
+  if(!groq.configured)throw Object.assign(new Error('설정에서 Groq Free 계정의 API 키를 저장하세요.'),{code:'GROQ_SETUP'});
   await patch(id,{intent:{auto,force,settingsKey:settingsKey(s.settings)},error:null});
   await engine('enqueue',{contentId:id,meta:s.metadata[id]??{}});
   return {pending:true};
@@ -161,7 +169,9 @@ async function startProcessing(id){
   const s=await state();
   if(!s.settings.consent){await chrome.tabs.create({url:SELF+'consent.html'});throw new Error('처음 실행 안내를 확인한 뒤 다시 눌러 주세요.');}
   if(['queued','running','summarizing'].includes(s.statuses[id]?.state))return {pending:true};
-  return enqueue(id,{auto:true});
+  // 키나 음성 전송 동의가 없으면 키를 넣는 설정 화면을 바로 연다(키 입력 위치를 찾지 못하던 문제).
+  try{return await enqueue(id,{auto:true});}
+  catch(e){if(e.code==='GROQ_SETUP')await chrome.runtime.openOptionsPage();throw e;}
 }
 async function openConfirm(id,force=false,sender){
   // Start opening within the original content-script gesture, before awaiting storage.
