@@ -8,7 +8,8 @@
   const dot=document.createElement('span');dot.className='dot';dot.setAttribute('aria-hidden','true');
   const label=document.createElement('span');label.textContent='클라스노트 · 대기';label.setAttribute('role','status');
   button.append(grip,dot,label);root.append(style,button);
-  const header=document.querySelector('header, #header');
+  // KLAS는 상단 헤더에 붙인다. icampus(Canvas)의 #header는 왼쪽 세로 메뉴라 오른쪽 아래에 띄운다(끌어서 옮길 수 있음).
+  const header=location.hostname==='klas.kw.ac.kr'?document.querySelector('header, #header'):null;
   if(header)header.append(host);else{host.dataset.floating='';document.body.append(host);}
   const send=async type=>{let r;try{r=await chrome.runtime.sendMessage({target:'bg',type});}catch(e){throw Error(/context invalidated/i.test(String(e?.message))?'확장이 새로 설치되거나 새로고침되었어요. 이 페이지를 새로고침(F5)한 뒤 다시 눌러 주세요.':String(e?.message||e));}if(!r?.ok)throw Error(r?.error||'확장 연결 오류');return r;};
   let disposed=false;

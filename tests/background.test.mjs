@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SUMMARY_FORMAT} from '../extension/src/core/pack.js';
 import {DEFAULT_SETTINGS,classifySender,safeName,parseSummary,cleanSettings,checkPayload} from '../extension/src/core/policy.js';
+import {SITE} from '../extension/src/site.js';
 
 const id='0123456789abcdef',ext='klihhclhnhhmldcbnkpampimkjafmbdm',self=`chrome-extension://${ext}/`;
 const ui={id:ext,url:self+'confirm.html?id='+id,tab:{id:1}};
@@ -22,7 +23,7 @@ globalThis.chrome={
     },
     connectNative(){let onMessage,onDisconnect,timer;return {onMessage:{addListener(fn){onMessage=fn;}},onDisconnect:{addListener(fn){onDisconnect=fn;}},disconnect(){clearTimeout(timer);onDisconnect?.();},postMessage(m){nativeCount++;if(hostMissing){timer=setTimeout(()=>{chrome.runtime.lastError={message:'Specified native messaging host not found.'};onDisconnect();chrome.runtime.lastError=null;},nativeDelay);return;}timer=setTimeout(()=>onMessage(m.cmd==='groqStatus'?{ok:true,configured:groqConfigured}:m.cmd==='transcribeGroq'?{ok:true,segments:[]}:m.cmd==='summarize'&&nativeFail?{ok:false,error:nativeFail}:{ok:true,text:JSON.stringify(summary),usage:{input:42}}),nativeDelay);}};},
   },
-  downloads:{download:async args=>{assert.match(args.filename,/KLAS요약\/과목\/_CON\.html$/);if(downloadFailures){downloadFailures--;throw Error('download failed');}downloads++;return downloads;}},
+  downloads:{download:async args=>{assert.ok(args.filename.endsWith(`${SITE.downloadRoot}/과목/_CON.html`),args.filename);if(downloadFailures){downloadFailures--;throw Error('download failed');}downloads++;return downloads;}},
   offscreen:{createDocument:async()=>{},closeDocument:async()=>{}},tabs:{create:async()=>({id:2})}
 };
 let panelPaths=[];
@@ -33,12 +34,12 @@ const send=(type,extra={})=>route({type,...extra},ui);
 test('strict sender routes reject external and lookalike pages',()=>{
   assert.equal(classifySender(ui,self,ext),'ui');
   assert.equal(classifySender({...ui,url:self+'sidepanel.html'},self,ext),'ui');
-  for(const url of ['https://evil.test/confirm.html','https://klas.kw.ac.kr.evil.test/std/lis/evltn/OnlineCntntsStdPage.do',self+'tools/test.html'])assert.equal(classifySender({...ui,url},self,ext),null);
+  for(const url of ['https://evil.test/confirm.html',SITE.examples.list.replace(/^(https:\/\/[^/]+)/,'$1.evil.test'),self+'tools/test.html'])assert.equal(classifySender({...ui,url},self,ext),null);
   assert.equal(classifySender({...ui,id:'other'},self,ext),null);
 });
 test('KLAS controls open only their own tab side panel without starting processing',async()=>{
   reset();panelOpens=[];
-  const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:27}};
+  const listSender={id:ext,url:SITE.examples.list,tab:{id:27}};
   await route({type:'openPanel',tabId:999},listSender);
   assert.deepEqual(panelOpens,[{tabId:27}]);assert.equal(engineCount,0);assert.equal(nativeCount,0);
   await assert.rejects(route({type:'openPanel'},{...listSender,url:'https://example.com/'}),/발신자/);
@@ -46,7 +47,7 @@ test('KLAS controls open only their own tab side panel without starting processi
 });
 test('KLAS header exposes only aggregate status and panel opening, never processing or automatic opening',async()=>{
   reset();panelOpens=[];
-  const sender={id:ext,url:'https://klas.kw.ac.kr/std/cmn/frame/Frame.do',tab:{id:28},frameId:0};
+  const sender={id:ext,url:SITE.examples.status,tab:{id:28},frameId:0};
   data.statuses={a:{state:'running'},b:{state:'awaiting_confirmation'},c:{state:'error'},d:{state:'complete'}};
   const status=await route({type:'getStatus'},sender);
   assert.deepEqual(status,{consent:true,counts:{active:1,ready:1,error:1}});
@@ -57,7 +58,7 @@ test('KLAS header exposes only aggregate status and panel opening, never process
 });
 test('manual row and sidebar actions review in the panel without invoking the engine or AI',async()=>{
   reset();panelPaths=[];
-  const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:27}};
+  const listSender={id:ext,url:SITE.examples.list,tab:{id:27}};
   const row=await route({type:'manualSummary',contentId:id},listSender);assert.equal(row.panel,true);
   const pane=await route({type:'openConfirm',contentId:id},{id:ext,url:self+'sidepanel.html'});assert.equal(pane.panel,true);
   assert.equal(panelPaths.length,2);assert.match(panelPaths[0],/confirm\.html\?id=0123456789abcdef&panel=1$/);
@@ -82,7 +83,7 @@ test('unopened lecture and missing consent block processing',async()=>{
   reset();data.settings.consent=false;await assert.rejects(send('prepareSummary',{contentId:id}),/안내/);assert.equal(nativeCount,0);
 });
 test('forged player ID cannot grant opened permission',async()=>{
-  reset();delete data.opened[id];await assert.rejects(route({type:'lectureOpened',contentId:id},{id:ext,url:'https://kwcommons.kw.ac.kr/em/aaaaaaaaaaaaaaaa',tab:{id:3}}),/다릅니다/);assert.equal(data.opened[id],undefined);
+  reset();delete data.opened[id];await assert.rejects(route({type:'lectureOpened',contentId:id},{id:ext,url:SITE.examples.playerBase+'aaaaaaaaaaaaaaaa',tab:{id:3}}),/다릅니다/);assert.equal(data.opened[id],undefined);
 });
 test('report note action uses completed saved transcription without ASR or automatic AI',async()=>{
   reset();lectureState='done';enqueueCount=0;
@@ -159,14 +160,14 @@ test('confirm page polling never restarts processing, so a cancel is not undone'
 
 test('a lecture with KLAS progress counts as opened, one without progress does not',async()=>{
   reset();delete data.opened[id];const other='fedcba9876543210';
-  const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:5}};
+  const listSender={id:ext,url:SITE.examples.list,tab:{id:5}};
   await route({type:'registerLectures',items:[{contentId:id,title:'들은 강의',prog:100},{contentId:other,title:'안 들은 강의',prog:0}]},listSender);
   assert.ok(data.opened[id]);assert.equal(data.opened[other],undefined);
 });
 
 test('"지금 요약" on an unprocessed lecture starts processing without opening the confirm screen',async()=>{
   reset();enqueueCount=0;panelOpens=[];panelPaths=[];
-  const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:9}};
+  const listSender={id:ext,url:SITE.examples.list,tab:{id:9}};
   const r=await route({type:'startProcessing',contentId:id},listSender);
   assert.equal(r.pending,true);assert.equal(enqueueCount,1);assert.equal(panelOpens.length,0);assert.equal(panelPaths.length,0);
   data.statuses[id]={state:'running'};
@@ -188,7 +189,7 @@ test('legacy consent never grants external audio consent and strips the local mo
 });
 test('Groq keys are available only through options, never KLAS or other extension views',async()=>{
  reset();const before=nativeCount;
- for(const sender of [ui,{id:ext,url:self+'sidepanel.html'},{id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:1}},{id:ext,url:self+'offscreen.html'}]){
+ for(const sender of [ui,{id:ext,url:self+'sidepanel.html'},{id:ext,url:SITE.examples.list,tab:{id:1}},{id:ext,url:self+'offscreen.html'}]){
   for(const type of ['groqStatus','saveGroqKey','removeGroqKey','testGroq'])await assert.rejects(route({type,apiKey:'fixture-key'},sender));
  }
  assert.equal(nativeCount,before);assert.equal(JSON.stringify(data).includes('fixture-key'),false);
@@ -201,7 +202,7 @@ test('audio consent is required for initial enqueue and every native chunk',asyn
  assert.equal(nativeCount,before);
 });
 test('a missing Groq key or audio consent opens the settings page from the list button',async()=>{
- const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:15}};
+ const listSender={id:ext,url:SITE.examples.list,tab:{id:15}};
  reset();data.settings.asrConsent=false;let opens=optionsOpens;
  await assert.rejects(route({type:'startProcessing',contentId:id},listSender),/Groq 음성 전송 동의/);
  assert.equal(optionsOpens,opens+1);
@@ -231,7 +232,7 @@ test('cancellation during storage permission check never starts a late remote re
 });
 test('the KLAS list can save a raw HTML once transcription is done, without an AI summary',async()=>{
  reset();
- const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:11}};
+ const listSender={id:ext,url:SITE.examples.list,tab:{id:11}};
  data.statuses[id]={state:'running'};
  await assert.rejects(route({type:'download',contentId:id},listSender),/받아쓰기가 끝난/);
  for(const state of ['done','awaiting_confirmation','complete']){
@@ -254,7 +255,7 @@ test('an outdated Claude Code error is explained in Korean and the raw HTML stay
  }finally{nativeFail=null;}
  assert.equal(data.statuses[id].state,'error');assert.equal(data.statuses[id].transcribed,true);
  assert.match(data.statuses[id].error,/claude update/);
- const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:12}};
+ const listSender={id:ext,url:SITE.examples.list,tab:{id:12}};
  const before=downloads;await route({type:'download',contentId:id},listSender);assert.equal(downloads,before+1);
 });
 test('the engine status marks transcription done and clears the mark when transcription runs again',async()=>{
@@ -263,7 +264,7 @@ test('the engine status marks transcription done and clears the mark when transc
  await route({type:'status',contentId:id,patch:{state:'done'}},engineSender);await new Promise(r=>setTimeout(r,15));
  assert.equal(data.statuses[id].transcribed,true);
  data.statuses[id]={...data.statuses[id],state:'error'};
- const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:13}};
+ const listSender={id:ext,url:SITE.examples.list,tab:{id:13}};
  await route({type:'download',contentId:id},listSender);
  await route({type:'status',contentId:id,patch:{state:'running'}},engineSender);
  data.statuses[id]={...data.statuses[id],state:'error'};
@@ -273,7 +274,7 @@ test('the engine status marks transcription done and clears the mark when transc
 test('a completed status without a stored transcript explains the fix and reopens processing',async()=>{
  // Seen 2026-10-05: lectures marked complete in the list had no transcript in this Chrome's IndexedDB.
  reset();lectureState='missing';
- const listSender={id:ext,url:'https://klas.kw.ac.kr/std/lis/evltn/OnlineCntntsStdPage.do',tab:{id:14}};
+ const listSender={id:ext,url:SITE.examples.list,tab:{id:14}};
  data.statuses[id]={state:'complete',step:'HTML 저장 완료'};
  try{await assert.rejects(route({type:'download',contentId:id},listSender),/저장된 받아쓰기가 없습니다.*지금 요약/);}
  finally{lectureState='done';}

@@ -3,6 +3,13 @@
 갱신: 2026-10-05, 브랜치 `fix/low-memory-asr`(기준 커밋 `e098f94`). 원래 2026-10-04 Claude → Codex 인계 문서였고, 커밋 `5566eaf`부터 받아쓰기 구조가 바뀌어 현재 코드에 맞게 다시 썼다. 공개 저장소: https://github.com/THISISMYCOSMOS/klasnote.
 사용자 언어는 한국어, 에이전트 간 인계는 영어. 표시 이름은 `klasnote`(manifest `name`)이고 확장 ID(manifest `key`)·네이티브 호스트 이름 `com.klas_summarizer.host`·설치 폴더 `KlasSummarizer`·다운로드 폴더 `KLAS요약`은 그대로다. 구 브라우저 Whisper(transformers.js/ONNX/WebGPU) 설명은 모두 삭제했고 필요한 기록만 §9에 "역사"로 남겼다.
 
+## 0. jwsj 저장소 (2026-10-09, 성균관대 icampus 빌드)
+- 이 저장소는 klasnote(광운대)를 바탕으로 한 **성균관대 icampus 전용 빌드**다. `extension/src/site.js`가 `sites/skku.js`를 가리키고, manifest의 권한·콘텐츠 스크립트가 성대 주소다. 광운대로 되돌리려면 site.js를 `sites/kw.js`로, manifest 사이트 항목을 커밋 69845c8의 것으로 바꾼다(테스트는 두 설정 모두 통과).
+- 성대 구조(실측): 강의 목록 = canvas.skku.edu '강의콘텐츠' 탭의 같은 출처 iframe `/learningx/lti/modulebuilder`(React, `.xnmb-module_item-outer-wrapper`). 강의 정보 = `/learningx/api/v1/courses/<id>/modules?include_detail=true`(쿠키 xn_api_token을 Bearer로), 행↔강의 = 제목 링크 `/modules/items/<id>` ↔ API `module_item_id`. 녹화 강의만(`item_content_type=commons`, `content_type=movie`). 메타 XML = lcms.skku.edu content.php(광운대와 같은 형식), mp4 = vod.skku.edu(인증 없음, Range, moov 끝). 플레이어 = lcms.skku.edu/em/<id>.
+- '열어 본 강의' 판정: API에 진도 값이 없어 `completed=true`(학습 완료)이면 열린 것으로 보고, 그 밖에는 플레이어 열림 신호(kw-player.js, lcms /em/)로 연다.
+- `content/skku-list.js`는 KLAS용 `klas-list.js`의 컨트롤 UI를 그대로 옮긴 사본이다(두 학교 빌드를 따로 두기 위해 공유 모듈로 빼지 않았다). 상태 칩(klas-status.js)은 KLAS가 아니면 오른쪽 아래에 뜬다.
+- 확인: 실제 icampus 화면에 skku-list.js를 가짜 확장 API로 실행해 11개 녹화 강의 등록·행별 버튼 부착·주차 펼침 후 재부착을 확인했다. 실제 확장 설치 후 받아쓰기 끝까지는 아직 확인하지 않았다.
+
 ## 1. 제품 결정 (사용자 승인, 사용자 허락 없이 바꾸지 말 것)
 - 광운대 KLAS 온라인 강의용 Chrome MV3 확장. 현재는 개인 학습용 비공개 프로토타입이며 배포는 별도 조건이 남아 있다(§6).
 - 강의별 **자동 처리 스위치**(기본 OFF). ON인 강의를 학생이 열면(`lectureOpened`) 확장이 같은 mp4를 백그라운드에서 받아쓴다. 플레이어·KLAS 뷰어 창은 건드리지 않는다. OFF면 자동 작업 없음. "지금 요약" 버튼은 수동으로 받아쓰기를 시작한다.

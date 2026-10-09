@@ -4,6 +4,7 @@ import {spawn} from 'node:child_process';
 import {mkdirSync,writeFileSync,readFileSync,unlinkSync,existsSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {platformPaths,EXTENSION_ID,isLauncherAlive} from './platform.mjs';
+import {SITE} from '../extension/src/site.js';
 const root=resolve(import.meta.dirname,'..');
 const P=platformPaths();
 const installed=P.installRoot;
@@ -18,11 +19,11 @@ const id=EXTENSION_ID,pidFile=resolve(installed,smoke?'Chrome-smoke.pid':'Chrome
 mkdirSync(profile,{recursive:true});
 if(existsSync(pidFile)){
   const alive=isLauncherAlive(pidFile);
-  if(alive){const p=spawn(chrome,['--user-data-dir='+profile,'https://klas.kw.ac.kr/'],{windowsHide:false,detached:true,stdio:'ignore'});p.unref();process.exit(0);}
+  if(alive){const p=spawn(chrome,['--user-data-dir='+profile,SITE.startUrl],{windowsHide:false,detached:true,stdio:'ignore'});p.unref();process.exit(0);}
   unlinkSync(pidFile);
 }
 writeFileSync(pidFile,String(process.pid));
-const p=spawn(chrome,['--user-data-dir='+profile,'--remote-debugging-pipe','--enable-unsafe-extension-debugging',...(smoke?['--headless=new']:[]),'--disable-background-mode','--no-first-run','--no-default-browser-check',smoke?'about:blank':'https://klas.kw.ac.kr/'],{windowsHide:smoke,stdio:['ignore','ignore','ignore','pipe','pipe']});
+const p=spawn(chrome,['--user-data-dir='+profile,'--remote-debugging-pipe','--enable-unsafe-extension-debugging',...(smoke?['--headless=new']:[]),'--disable-background-mode','--no-first-run','--no-default-browser-check',smoke?'about:blank':SITE.startUrl],{windowsHide:smoke,stdio:['ignore','ignore','ignore','pipe','pipe']});
 let buf='',seq=0,finished=false;const pending=new Map();const warnings=[];
 function cleanup(){if(finished)return;finished=true;try{if(readFileSync(pidFile,'utf8')===String(process.pid))unlinkSync(pidFile);}catch{}for(const v of pending.values()){clearTimeout(v.timer);v.reject(Error('Chrome closed'));}pending.clear();}
 p.on('exit',cleanup);p.on('error',cleanup);process.on('exit',cleanup);

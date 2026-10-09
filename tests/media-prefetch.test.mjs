@@ -1,13 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSource, fetchWindow, decodeKeyframes, isAllowedMediaUrl } from '../extension/src/core/media.js';
+import { SITE } from '../extension/src/site.js';
 
 test('only mp4 files under the school media origin are accepted', () => {
-  assert.equal(isAllowedMediaUrl('https://kwcommons.kw.ac.kr/contents/a/media_files/mobile/ssmovie.mp4'), true);
-  assert.equal(isAllowedMediaUrl('https://kwcommons.kw.ac.kr/contents/a/ssmovie.mp4?x=1'), true);
-  for (const url of ['https://kwcommons.kw.ac.kr.evil.test/ssmovie.mp4', 'https://kwcommons.kw.ac.kr@evil.test/ssmovie.mp4', 'http://kwcommons.kw.ac.kr/ssmovie.mp4',
-    'https://evil.test/https://kwcommons.kw.ac.kr/ssmovie.mp4', 'https://kwcommons.kw.ac.kr/contents/a/ssmovie.m3u8', null, undefined])
+  const o = SITE.mediaOrigins[0];
+  assert.equal(isAllowedMediaUrl(SITE.examples.media), true);
+  assert.equal(isAllowedMediaUrl(`${o}/contents/a/ssmovie.mp4?x=1`), true);
+  for (const url of [`${o}.evil.test/ssmovie.mp4`, `${o}@evil.test/ssmovie.mp4`, `${o.replace('https:', 'http:')}/ssmovie.mp4`,
+    `https://evil.test/${o}/ssmovie.mp4`, `${o}/contents/a/ssmovie.m3u8`, null, undefined])
     assert.equal(isAllowedMediaUrl(url), false, String(url));
+  // 다른 학교의 영상 서버는 이 빌드에서 받지 않는다.
+  const other = SITE.id === 'kw' ? 'https://vod.skku.edu/a/ssmovie.mp4' : 'https://kwcommons.kw.ac.kr/a/ssmovie.mp4';
+  assert.equal(isAllowedMediaUrl(other), false);
 });
 
 const tick = () => new Promise(resolve => setImmediate(resolve));

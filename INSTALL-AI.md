@@ -1,6 +1,6 @@
 # INSTALL-AI.md — install guide for AI assistants
 
-This file is for an AI assistant (Claude Code, Codex, ChatGPT, …) helping a student install **klasnote** on *their* computer. Human-readable steps are in `README.md` §2–3. Follow this file top to bottom, verify each step before moving on, and talk to the user in Korean.
+This file is for an AI assistant (Claude Code, Codex, ChatGPT, …) helping a student install **klasnote** on *their* computer. This repository is the **Sungkyunkwan University (SKKU) icampus build**: it works on icampus (canvas.skku.edu) recorded lectures only. Human-readable steps are in `README.md` §2–3. Follow this file top to bottom, verify each step before moving on, and talk to the user in Korean.
 
 klasnote = a Chrome MV3 extension + a small Node.js "native messaging host" (연결 프로그램). The extension downloads lecture audio, the host sends it to Groq for transcription with the user's own API key, and the extension saves an HTML study note.
 
@@ -26,7 +26,7 @@ klasnote = a Chrome MV3 extension + a small Node.js "native messaging host" (연
 | Node.js | ≥ 18 (LTS recommended) | Needed by the installer and the host (`fetch`, `FormData`, `Blob`). The installer refuses older versions. |
 | Node installers | nodejs.org MSI/pkg, nvm-windows, Volta, fnm, Homebrew, Scoop | fnm temp shells and Homebrew versioned paths are rewritten to stable paths automatically (`stableNodePath` in `scripts/platform.mjs`). |
 | User names / paths | Korean and space-containing paths are OK | A Windows user name or Node path containing `%` or `"` is rejected ("지원하지 않는 설치 경로 문자"). |
-| Network | Needs `api.groq.com` and the school's video server | Some campus or company networks block Groq. |
+| Network | Needs `api.groq.com`, `canvas.skku.edu`, `lcms.skku.edu` and `vod.skku.edu` | Some campus or company networks block Groq. |
 
 ---
 
@@ -56,11 +56,11 @@ The ZIP is `downloads/klasnote-<version>.zip` in this repository (the README dow
 
 Windows:
 ```powershell
-Expand-Archive -Path "$HOME\Downloads\klasnote-0.1.4.zip" -DestinationPath "$HOME\Downloads\klasnote-0.1.4" -Force
+Expand-Archive -Path "$HOME\Downloads\klasnote-0.2.0.zip" -DestinationPath "$HOME\Downloads\klasnote-0.2.0" -Force
 ```
 macOS:
 ```sh
-ditto -x -k ~/Downloads/klasnote-0.1.4.zip ~/Downloads/klasnote-0.1.4
+ditto -x -k ~/Downloads/klasnote-0.2.0.zip ~/Downloads/klasnote-0.2.0
 ```
 Verify: the extracted folder contains `install.cmd` / `install.command`, `extension/`, `scripts/`, `native-host/`.
 
@@ -99,7 +99,7 @@ Tell the user, in Korean:
    - Picking the parent folder gives "매니페스트 파일이 없거나 읽을 수 없습니다".
 3. A **klasnote** card appears and the first-setup tab (처음 설정) opens. They choose a mode, tick **Groq 음성 전송에 동의합니다**, and click **계속**. The settings page opens.
 4. Groq key: the user creates a key at https://console.groq.com/keys (**Create API Key**; it starts with `gsk_` and is shown only once). They paste it into **API 키**, tick **강의 음성을 Groq로 보내 받아쓰는 데 동의합니다** and click **키·동의 저장**. Success message: "저장 완료 · Groq 연결 성공. 강의 목록에서 "지금 요약"을 누르세요."
-5. They reload any open KLAS tab with **F5**. The klasnote buttons appear under each lecture's `보기` button.
+5. They reload any open icampus tab with **F5**, open a course's **강의콘텐츠** tab (https://canvas.skku.edu/courses/<id>/external_tools/…, reached from https://icampus.skku.edu/ → 나의 과목) and expand a week. The klasnote controls (자동 처리 / 지금 요약) appear under each **recorded video** lecture's title. Zoom live sessions, files and audio-only items get no controls. 지금 요약 is enabled for lectures marked 학습 완료, or after the user has played the lecture once.
 
 The extension ID is fixed by `manifest.json` `key`: `klihhclhnhhmldcbnkpampimkjafmbdm`. The host only accepts this ID.
 
@@ -147,8 +147,8 @@ Note: if you run doctor inside a sandboxed app (rule 0.2), it can report ✔ whi
 | settings | Groq 계정에서 선택한 전사 모델을 사용할 수 없습니다. | account cannot use `whisper-large-v3-turbo` | the user checks their Groq console |
 | settings | Groq 사용 한도에 도달했습니다. | free quota used up | wait; processing resumes automatically |
 | settings | Groq에 연결하거나 응답을 읽을 수 없습니다. | network or firewall | try another network; click **연결 테스트·대기 재개** |
-| KLAS list | 이 페이지를 새로고침(F5)한 뒤 다시 눌러 주세요 | page opened before install or update | F5 |
-| KLAS list | 설정에서 Groq Free 계정의 API 키를 저장하세요. (settings opens automatically) | no key yet | §5.4 |
+| icampus 강의콘텐츠 | 이 페이지를 새로고침(F5)한 뒤 다시 눌러 주세요 | page opened before install or update | F5 |
+| icampus 강의콘텐츠 | 설정에서 Groq Free 계정의 API 키를 저장하세요. (settings opens automatically) | no key yet | §5.4 |
 
 ### 6.2 Older registration elsewhere
 
@@ -177,7 +177,7 @@ Do not try to work around these. Tell the user to use a personal PC or ask their
 
 ## 7. Update and uninstall
 
-- **Update:** wait for running jobs to finish, extract the new ZIP, run the installer again, click ↻ on the klasnote card in `chrome://extensions`, then F5 any KLAS tab. The saved Groq key is kept.
+- **Update:** wait for running jobs to finish, extract the new ZIP, run the installer again, click ↻ on the klasnote card in `chrome://extensions`, then F5 any icampus tab. The saved Groq key is kept.
 - **Uninstall:**
   1. Remove the card in `chrome://extensions`.
   2. Windows: run `powershell -ExecutionPolicy Bypass -File uninstall.ps1` from the extracted folder. macOS: run `sh uninstall.command`.
@@ -193,4 +193,4 @@ Do not try to work around these. Tell the user to use a personal PC or ask their
 | Install folder | `%LOCALAPPDATA%\KlasSummarizer\` (`extension\`, `host.mjs`, `groq.mjs`, `host.bat`, `host-config.json`, `com.klas_summarizer.host.json`, `.klas-summarizer-host`, `.installed-version`) | `~/Library/Application Support/KlasSummarizer/` (same, with `host.sh`) |
 | Registration | `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host` | `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.klas_summarizer.host.json` (and the same file under `KlasSummarizer/Chrome/NativeMessagingHosts/` for the dedicated-window mode) |
 | Groq key | `groq-config.json` next to `host.mjs`, created by the settings page. **Never read it.** | same |
-| Results | the user's Downloads folder: `KLAS요약/<과목>/<주차>_<강의명>.html` | same |
+| Results | the user's Downloads folder: `icampus요약/<과목>/<주차>_<강의명>.html` | same |
