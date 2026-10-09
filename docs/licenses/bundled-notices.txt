@@ -1,0 +1,2 @@
+Bundled browser dependency: MP4Box.js (BSD-3-Clause). See mp4box.txt.
+No local ASR model, Transformers.js, or ONNX Runtime is distributed.
