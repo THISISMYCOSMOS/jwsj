@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {HOST_NAME as hostName,EXTENSION_ID as extensionId,platformPaths,macHostScript,stableNodePath} from './platform.mjs';
+import {HOST_NAME as hostName,EXTENSION_ID as extensionId,platformPaths,macHostScript,stableNodePath,readRegistry,regKey} from './platform.mjs';
 
 const source=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const registryKey=`HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\${hostName}`;
@@ -55,11 +55,11 @@ function writeHostConfig(root){
   fs.writeFileSync(path.join(root,'host-config.json'),JSON.stringify({npmPrefix},null,2));
 }
 function windowsRegistered(){
-  const query=spawnSync('reg.exe',['query',registryKey,'/ve'],{encoding:'utf8',windowsHide:true});
-  if(query.error)throw Error('네이티브 호스트 등록 상태를 확인할 수 없습니다.');
-  if(query.status!==0&&query.status!==1)throw Error('레지스트리 조회에 실패했습니다.');
-  const registered=query.status===0?query.stdout.match(/REG_SZ\s+([^\r\n]+)/)?.[1]?.trim():null;
-  if(query.status===0&&!registered)throw Error('기존 호스트 등록 경로를 읽지 못했습니다.');
+  // reg query 출력은 한국어 Windows에서 CP949라 한글 사용자 경로가 깨져 '다른 호스트'로 오판했다. UTF-16 export로 읽는다.
+  const parsed=readRegistry(registryKey);
+  if(!parsed)return null;
+  const registered=regKey(parsed,registryKey)?.['']?.trim();
+  if(!registered)throw Error('기존 호스트 등록 경로를 읽지 못했습니다.');
   return registered;
 }
 function macRegistered(manifestPath){

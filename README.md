@@ -111,7 +111,7 @@
 <a id="예전-등록-정리"></a>
 <details><summary>예전 등록 정리 (Windows)</summary>
 
-먼저 `reg query "HKCUSoftwareGoogleChromeNativeMessagingHostscom.klas_summarizer.host" /ve`로 어디를 가리키는지 확인하세요. 예전 klasnote 폴더(또는 이미 없는 경로)가 맞다면, 명령 프롬프트에서 아래 명령을 실행하면 klasnote 연결 프로그램 등록만 지워요. 다른 프로그램 등록은 건드리지 않습니다. 실행 후 `install.cmd`를 다시 실행하세요.
+먼저 `reg query "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host" /ve`로 어디를 가리키는지 확인하세요. 예전 klasnote 폴더(또는 이미 없는 경로)가 맞다면, 명령 프롬프트에서 아래 명령을 실행하면 klasnote 연결 프로그램 등록만 지워요. 다른 프로그램 등록은 건드리지 않습니다. 실행 후 `install.cmd`를 다시 실행하세요.
 
 ```
 reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host" /f

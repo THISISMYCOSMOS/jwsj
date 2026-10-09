@@ -58,6 +58,42 @@ export function isLauncherAlive(pidFile, { platform = process.platform } = {}) {
   return r.stdout.includes('chrome-launch');
 }
 
+// reg.exe query의 출력은 콘솔 코드 페이지(한국어 Windows는 CP949)라 UTF-8로 읽으면 한글 경로가 깨진다(독립 검토 2026-10-09).
+// reg export는 항상 UTF-16LE .reg 파일을 쓰므로 그것을 읽는다. 반환: {'HKEY_…\\키': {'': 기본값, 이름: 문자열}}
+export function parseRegExport(text) {
+  const out = {}; let cur = null;
+  const unescape = (s) => s.replace(/\\(.)/g, '$1');
+  for (const raw of String(text).replace(/^﻿/, '').split(/\r?\n/)) {
+    const line = raw.trimEnd();
+    const section = line.match(/^\[(.+)\]$/);
+    if (section) { cur = out[section[1]] = {}; continue; }
+    const m = cur && line.match(/^(@|"((?:[^"\\]|\\.)*)")=(.*)$/);
+    if (!m) continue;
+    const str = m[3].match(/^"((?:[^"\\]|\\.)*)"$/);
+    const value = str ? unescape(str[1]) : /^dword:[0-9a-f]{8}$/i.test(m[3]) ? String(parseInt(m[3].slice(6), 16)) : null;
+    if (value !== null) cur[m[1] === '@' ? '' : unescape(m[2])] = value;
+  }
+  return out;
+}
+// 키(하위 키 포함)를 읽는다. 키가 없으면 null, reg.exe를 쓸 수 없으면 오류.
+export function readRegistry(key, { spawn = spawnSync } = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'klas-reg-'));
+  try {
+    const file = path.join(dir, 'k.reg');
+    const r = spawn('reg.exe', ['export', key, file, '/y'], { windowsHide: true });
+    if (r.error) throw Error('레지스트리를 읽을 수 없습니다.');
+    if (r.status === 1 || !fs.existsSync(file)) return null;
+    if (r.status !== 0) throw Error('레지스트리 조회에 실패했습니다.');
+    return parseRegExport(fs.readFileSync(file).toString('utf16le'));
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
+// 위 결과에서 'HKCU\\…' 같은 짧은 이름으로 키 하나를 찾는다(대소문자 무시).
+export function regKey(parsed, key) {
+  const full = key.replace(/^HKCU\\/i, 'HKEY_CURRENT_USER\\').replace(/^HKLM\\/i, 'HKEY_LOCAL_MACHINE\\').toLowerCase();
+  const hit = Object.keys(parsed || {}).find((k) => k.toLowerCase() === full);
+  return hit ? parsed[hit] : null;
+}
+
 // 연결 프로그램 실행기에 적어 둘 node 경로. 설치할 때의 node 경로가 나중에 사라지는 환경을 피한다.
 // - fnm: 셸마다 임시 폴더(fnm_multishells)를 만들고 창을 닫으면 지운다 → 실제 설치 경로(realpath)로 바꾼다.
 // - Homebrew: process.execPath가 버전 폴더(Cellar/node/22.1.0)라 brew upgrade 후 사라진다 → 버전 없는 opt/<formula>/bin/node로 바꾼다.

@@ -1,13 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseRegValues,launcherNodePath,policyProblems} from '../scripts/doctor.mjs';
-import {stableNodePath,macHostScript} from '../scripts/platform.mjs';
+import {launcherNodePath,policyProblems,collectPolicies,hostLine} from '../scripts/doctor.mjs';
+import {stableNodePath,macHostScript,parseRegExport,regKey} from '../scripts/platform.mjs';
 
-test('registry output is parsed in English and Korean Windows, including the default value', () => {
-  const en = '\r\nHKEY_CURRENT_USER\\Software\\Google\\Chrome\\NativeMessagingHosts\\com.klas_summarizer.host\r\n    (Default)    REG_SZ    C:\\Users\\a b\\AppData\\Local\\KlasSummarizer\\com.klas_summarizer.host.json\r\n';
-  assert.equal(parseRegValues(en)[''], 'C:\\Users\\a b\\AppData\\Local\\KlasSummarizer\\com.klas_summarizer.host.json');
-  const ko = '\r\nHKEY_LOCAL_MACHINE\\Software\\Policies\\Google\\Chrome\r\n    (기본값)    REG_SZ    x\r\n    NativeMessagingUserLevelHosts    REG_DWORD    0x0\r\n';
-  assert.deepEqual(parseRegValues(ko), {'': 'x', NativeMessagingUserLevelHosts: '0x0'});
+// What `reg export` writes (UTF-16LE on disk, shown here decoded): Korean user path, escaped backslashes and quotes, dword, subkeys.
+const EXPORT = '\uFEFFWindows Registry Editor Version 5.00\r\n\r\n'
+  + '[HKEY_CURRENT_USER\\Software\\Google\\Chrome\\NativeMessagingHosts\\com.klas_summarizer.host]\r\n'
+  + '@="C:\\\\Users\\\\홍길동\\\\AppData\\\\Local\\\\KlasSummarizer\\\\com.klas_summarizer.host.json"\r\n\r\n'
+  + '[HKEY_LOCAL_MACHINE\\Software\\Policies\\Google\\Chrome]\r\n'
+  + '"NativeMessagingUserLevelHosts"=dword:00000000\r\n'
+  + '"ExtensionSettings"="{\\"*\\":{\\"installation_mode\\":\\"blocked\\"}}"\r\n'
+  + '"BinaryThing"=hex:01,02\r\n\r\n'
+  + '[HKEY_LOCAL_MACHINE\\Software\\Policies\\Google\\Chrome\\ExtensionInstallBlocklist]\r\n'
+  + '"1"="*"\r\n';
+
+test('reg export output keeps Korean paths intact and is looked up by short key names', () => {
+  const parsed = parseRegExport(EXPORT);
+  assert.equal(regKey(parsed, 'HKCU\\Software\\Google\\Chrome\\NativeMessagingHosts\\com.klas_summarizer.host')[''],
+    'C:\\Users\\홍길동\\AppData\\Local\\KlasSummarizer\\com.klas_summarizer.host.json');
+  const policy = regKey(parsed, 'hklm\\software\\policies\\google\\chrome');
+  assert.equal(policy.NativeMessagingUserLevelHosts, '0');
+  assert.equal(policy.ExtensionSettings, '{"*":{"installation_mode":"blocked"}}');
+  assert.equal('BinaryThing' in policy, false);
+  assert.equal(regKey(parsed, 'HKCU\\Software\\Missing'), null);
+});
+
+test('Chrome policies are collected from the registry with HKLM taking precedence', () => {
+  const p = collectPolicies([['HKLM', parseRegExport(EXPORT)], ['HKCU', parseRegExport('[HKEY_CURRENT_USER\\Software\\Policies\\Google\\Chrome]\r\n"NativeMessagingUserLevelHosts"=dword:00000001\r\n')]]);
+  assert.equal(p.NativeMessagingUserLevelHosts, '0');
+  assert.deepEqual(p.ExtensionInstallBlocklist, ['*']);
+  assert.equal(policyProblems(p).length, 3);
 });
 
 test('the node path is read back from both launcher formats', () => {
@@ -18,24 +40,32 @@ test('the node path is read back from both launcher formats', () => {
 });
 
 test('school or company Chrome policies that block the extension or its host are reported', () => {
+  const id = 'klihhclhnhhmldcbnkpampimkjafmbdm';
   assert.deepEqual(policyProblems({}), []);
-  assert.equal(policyProblems({ExtensionDeveloperModeSettings: '1'}).length, 1);
-  assert.equal(policyProblems({NativeMessagingUserLevelHosts: '0'}).length, 1);
-  assert.equal(policyProblems({ExtensionInstallBlocklist: ['*']}).length, 1);
-  assert.deepEqual(policyProblems({ExtensionInstallBlocklist: ['*'], ExtensionInstallAllowlist: ['klihhclhnhhmldcbnkpampimkjafmbdm']}), []);
-  assert.deepEqual(policyProblems({NativeMessagingBlocklist: ['*'], NativeMessagingAllowlist: ['com.klas_summarizer.host']}), []);
+  for (const p of [{ExtensionDeveloperModeSettings: '1'}, {DeveloperToolsAvailability: '2'}, {NativeMessagingUserLevelHosts: '0'},
+    {ExtensionInstallBlocklist: ['*']}, {ExtensionInstallBlacklist: ['*']}, {ExtensionAllowedTypes: ['theme']},
+    {ExtensionSettings: '{"*":{"installation_mode":"blocked"}}'}, {ExtensionSettings: `{"${id}":{"installation_mode":"blocked"}}`},
+    {NativeMessagingBlocklist: ['*']}, {NativeMessagingBlacklist: ['*']}]) assert.equal(policyProblems(p).length, 1, JSON.stringify(p));
+  for (const p of [{DeveloperToolsAvailability: '1'}, {ExtensionInstallBlocklist: ['*'], ExtensionInstallAllowlist: [id]}, {ExtensionInstallBlacklist: ['*'], ExtensionInstallWhitelist: [id]},
+    {ExtensionAllowedTypes: ['extension', 'theme']}, {ExtensionSettings: `{"*":{"installation_mode":"blocked"},"${id}":{"installation_mode":"allowed"}}`},
+    {ExtensionSettings: 'not json'}, {NativeMessagingBlocklist: ['*'], NativeMessagingAllowlist: ['com.klas_summarizer.host']}]) assert.deepEqual(policyProblems(p), [], JSON.stringify(p));
+});
+
+test('the host line reports a missing Groq key as a failure, never as saved', () => {
+  assert.deepEqual(hostLine({ok: true, configured: true}), {ok: true, detail: 'Groq 키 저장됨', fix: ''});
+  assert.equal(hostLine({ok: true, configured: false}).ok, false);
+  assert.equal(hostLine({ok: true, configured: false}).detail, 'Groq 키 없음');
+  assert.equal(hostLine({ok: true}).detail, 'Groq 키 없음');
+  assert.equal(hostLine({ok: false, error: '응답 없음(시간 초과)'}).detail, '응답 없음(시간 초과)');
 });
 
 test('the launcher keeps a node path that survives shell exit and brew upgrades', () => {
   const exists = (p) => p !== '/missing';
-  // fnm: per-shell temporary folder → real install path
   assert.equal(stableNodePath('C:\\Users\\a\\AppData\\Local\\fnm_multishells\\123_456\\node.exe', {exists, realpath: () => 'C:\\Users\\a\\AppData\\Roaming\\fnm\\node-versions\\v20.11.1\\installation\\node.exe'}),
     'C:\\Users\\a\\AppData\\Roaming\\fnm\\node-versions\\v20.11.1\\installation\\node.exe');
   assert.equal(stableNodePath('/Users/a/.local/state/fnm_multishells/9_1/bin/node', {exists, realpath: () => { throw Error('gone'); }}), '/Users/a/.local/state/fnm_multishells/9_1/bin/node');
-  // Homebrew: versioned Cellar path → unversioned opt path
   assert.equal(stableNodePath('/opt/homebrew/Cellar/node/22.1.0/bin/node', {exists, realpath: (p) => p}), '/opt/homebrew/opt/node/bin/node');
   assert.equal(stableNodePath('/usr/local/Cellar/node@20/20.11.1/bin/node', {exists, realpath: (p) => p}), '/usr/local/opt/node@20/bin/node');
   assert.equal(stableNodePath('/opt/homebrew/Cellar/node/22.1.0/bin/node', {exists: () => false, realpath: (p) => p}), '/opt/homebrew/Cellar/node/22.1.0/bin/node');
-  // ordinary installers are kept as-is
   assert.equal(stableNodePath('C:\\Program Files\\nodejs\\node.exe', {exists, realpath: () => 'X'}), 'C:\\Program Files\\nodejs\\node.exe');
 });
