@@ -3,7 +3,7 @@
 // 각 행은 제목 링크(/courses/<과목>/modules/items/<모듈 항목>)의 번호로 API의 module_item_id와 짝짓는다(실측 2026-10-09).
 // 버튼 모양과 동작은 KLAS용 content/klas-list.js와 같다.
 (() => {
-  const valid=/^[0-9a-f]{8,32}$/i,controls=new Map();
+  const valid=/^[0-9a-f]{8,32}$/i,controls=new Map(),VIDEO_TYPES=new Set(['movie','everlec','mp4','screenlecture','audio']);
   let byItem=new Map(),current={statuses:{},opened:{}},courseId=null,loading=null,failedAt=0;
   const send=async(type,data={})=>{let r;try{r=await chrome.runtime.sendMessage({target:'bg',type,...data});}catch(e){throw new Error(/context invalidated/i.test(String(e?.message))?'확장이 새로 설치되거나 새로고침되었어요. 이 페이지를 새로고침(F5)한 뒤 다시 눌러 주세요.':String(e?.message||e));}if(!r?.ok)throw new Error(r?.error||'확장 연결 오류');return r;};
   async function refresh(){try{current=await send('getState');render();}catch{}}
@@ -29,7 +29,9 @@
       for(const it of Array.isArray(m?.module_items)?m.module_items:[]){
         const cd=it?.content_data??{},c=cd.item_content_data??{};
         // 녹화 강의(LCMS 동영상)만. Zoom 실시간 강의·파일·음성은 받아쓸 mp4가 없다.
-        if(cd.item_content_type!=='commons'||c.content_type!=='movie')continue;
+        // 형식: movie(video1 ssmovie.mp4), everlec·mp4(upf screen.mp4), screenlecture(video2 sub.mp4 / video1 main.mp4),
+        // audio(ssaudio.m4a, 슬라이드 없이 받아쓰기). 실측 2026-10-14, 수강 강의 224개 모두 주소 확인.
+        if(cd.item_content_type!=='commons'||!VIDEO_TYPES.has(c.content_type))continue;
         const contentId=String(c.content_id??'').toLowerCase();if(!valid.test(contentId))continue;
         // 진도 값이 API에 없어 '학습 완료'만 열어 본 강의로 인정한다. 그 밖의 강의는 한 번 재생하면(플레이어 열림 신호) 열린다.
         const item={contentId,title:String(cd.title??it.title??'').slice(0,200),course:course.slice(0,100),professor:professor.slice(0,50),week,

@@ -97,7 +97,8 @@ function buildItem(contentId, status, metadata, opened) {
 
   const title = document.createElement('div');
   title.className = 'sp-item__title';
-  title.textContent = meta.title || `강의 ${contentId}`;
+  // 목록에서 등록되지 않은 강의(예: 예전 버전이 건너뛴 화면 강의)는 처리 중 받은 강의 제목을 쓴다. 둘 다 없을 때만 ID.
+  title.textContent = meta.title || status?.title || `강의 ${contentId}`;
   li.appendChild(title);
 
   if (meta.course || meta.week) {

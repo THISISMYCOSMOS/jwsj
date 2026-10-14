@@ -11,7 +11,8 @@
     "offscreen",
     "nativeMessaging",
     "downloads",
-    "sidePanel"
+    "sidePanel",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "https://lcms.skku.edu/*",

@@ -287,3 +287,14 @@ test('a rejected summary ticket does not mark the lecture as transcribed',async(
  await assert.rejects(send('summarize',{contentId:id,requestId:'stale'}),/만료/);
  assert.equal(data.statuses[id].state,'error');assert.equal(data.statuses[id].transcribed,false);
 });
+test('media requests from the extension carry the school Referer; tab requests are left alone', async () => {
+  const {installMediaReferer} = await import('../extension/background.js');
+  let call;
+  await installMediaReferer({updateSessionRules: async arg => { call = arg; }});
+  assert.deepEqual(call.removeRuleIds, [1]);
+  const [rule] = call.addRules;
+  assert.deepEqual(rule.action.requestHeaders, [{header: 'Referer', operation: 'set', value: `${SITE.commonsOrigin}/`}]);
+  assert.deepEqual(rule.condition.requestDomains, SITE.mediaOrigins.map(o => new URL(o).hostname));
+  assert.deepEqual(rule.condition.tabIds, [-1]);
+  await installMediaReferer(undefined); // older Chrome / test harness without the API: no throw
+});

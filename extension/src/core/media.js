@@ -29,6 +29,11 @@ export function createSource(fetchImpl = fetch) {
   async function getRange(url, start, endInclusive, { signal, maxBytes = Infinity } = {}) {
     const r = await fetchImpl(url, { headers: { Range: `bytes=${start}-${endInclusive}` }, signal });
     if (r.status !== 206 && r.status !== 200) throw new Error(`HTTP ${r.status} range ${url}`);
+    // 영상 서버가 차단하면 206과 함께 HTML 안내 페이지를 준다. mp4로 읽지 않고 바로 알린다.
+    if (/text\/html/i.test(r.headers?.get('content-type') ?? '')) {
+      discardBody(r.body);
+      throw new Error('영상 서버가 영상 대신 안내 페이지를 보냈어요(접근 차단). 확장을 새로고침한 뒤 다시 시도하세요.');
+    }
     if (Number.isFinite(maxBytes)) {
       // Range를 무시한 서버의 전체 파일은 미리 받지 않는다. 본문을 읽기 전에 버린다.
       if (r.status !== 206 || Number(r.headers?.get('content-length')) > maxBytes || !r.body?.getReader) {
@@ -69,7 +74,12 @@ export async function loadContentInfo(src, contentId) {
   // 형식 1(upf): story의 main_media 파일명 + service_root의 progressive 주소 템플릿
   // 형식 2(video1): main_media > desktop|mobile > html5 안에 method=progressive와 완성된 media_uri (실측 2026-10-04)
   let mediaUrl = null;
-  const html5 = [...doc.querySelectorAll('main_media desktop html5, main_media mobile html5')]
+  // 형식 3(video2, 성대 화면 강의): main_media는 강의실 카메라, sub_media가 슬라이드 화면이다. 음성은 둘이 같다(실측 2026-10-14).
+  // 슬라이드를 뽑아야 하므로 sub_media를 먼저 쓴다.
+  const progressive = (sel) => [...doc.querySelectorAll(`${sel} desktop html5, ${sel} mobile html5`)]
+    .find((n) => n.querySelector('method')?.textContent?.trim() === 'progressive')?.querySelector('media_uri')?.textContent?.trim() || null;
+  if (q('content_playing_info > content_type') === 'video2') mediaUrl = progressive('sub_media');
+  const html5 = mediaUrl ? null : [...doc.querySelectorAll('main_media desktop html5, main_media mobile html5')]
     .find((n) => n.querySelector('method')?.textContent?.trim() === 'progressive');
   if (html5) mediaUrl = html5.querySelector('media_uri')?.textContent?.trim() || null;
   if (!mediaUrl) {
@@ -80,6 +90,12 @@ export async function loadContentInfo(src, contentId) {
     const tpl = [...doc.querySelectorAll('service_root media_uri')]
       .find((n) => n.getAttribute('method') === 'progressive')?.textContent?.trim();
     if (file && tpl && !/[/\\]/.test(file)) mediaUrl = tpl.replace('[MEDIA_FILE]', file);
+    // 성대 upf(everlec 등)는 service_root가 없다. content_uri(<commons>/…/contents/web_files)의
+    // 같은 경로를 mp4 origin의 media_files 아래로 옮긴 곳에 파일이 있다(실측 2026-10-14, 4강).
+    const base = q('content_playing_info > content_uri');
+    if (!mediaUrl && file && !/[/\\]/.test(file) && base.startsWith(`${SITE.commonsOrigin}/`) && /\/web_files\/?$/.test(base)) {
+      mediaUrl = SITE.mediaOrigins[0] + base.slice(SITE.commonsOrigin.length).replace(/\/web_files\/?$/, '/media_files/') + file;
+    }
   }
   if (!isAllowedMediaUrl(mediaUrl)) {
     throw new Error('지원하지 않는 콘텐츠 형식입니다 (progressive mp4 없음).');
@@ -88,7 +104,7 @@ export async function loadContentInfo(src, contentId) {
 }
 // 이 학교의 mp4 origin 아래 주소만 받는다. origin 뒤의 '/'까지 비교해 'kwcommons.kw.ac.kr.evil.test' 같은 주소를 막는다.
 export function isAllowedMediaUrl(url) {
-  return typeof url === 'string' && SITE.mediaOrigins.some((o) => url.startsWith(`${o}/`)) && /\.mp4(\?|$)/i.test(url);
+  return typeof url === 'string' && SITE.mediaOrigins.some((o) => url.startsWith(`${o}/`)) && /\.(mp4|m4a)(\?|$)/i.test(url);
 }
 
 // 최상위 박스를 머리(최대 16바이트)만 읽으며 건너뛰어 ftyp와 moov 위치를 찾는다.
@@ -166,15 +182,64 @@ function codecDescription(trak) {
   return new Uint8Array(ds.buffer, 8); // 박스 헤더 8바이트 제외
 }
 
+// 성대 일부 영상(예: 2.7초짜리 video2)은 음성 트랙에 esds(디코더 설정)가 없다. 프레임은 일반 AAC-LC 원시 프레임이라
+// 표본 주파수·채널 수로 AAC-LC AudioSpecificConfig(2바이트)를 만들어 쓴다(실측 2026-10-14).
+const AAC_RATES = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+export function aacLcConfig(rate, channels) {
+  const i = AAC_RATES.indexOf(rate);
+  if (i < 0 || !Number.isInteger(channels) || channels < 1 || channels > 7) return undefined;
+  return new Uint8Array([(2 << 3) | (i >> 1), ((i & 1) << 7) | (channels << 3)]);
+}
 function aacDescription(trak) {
-  const esds = trak.mdia.minf.stbl.stsd.entries[0].esds;
-  const dsi = esds?.esd?.descs?.[0]?.descs?.[0]?.data;
-  return dsi ? new Uint8Array(dsi) : undefined;
+  const entry = trak.mdia.minf.stbl.stsd.entries[0];
+  const dsi = entry.esds?.esd?.descs?.[0]?.descs?.[0]?.data;
+  if (dsi) return new Uint8Array(dsi);
+  return entry.type === 'mp4a' ? aacLcConfig(entry.samplerate, entry.channel_count) : undefined;
 }
 
 const sec = (s, track) => s.cts / track.info.timescale;
 
-// [t0, t1) 구간을 한 번의 Range 요청으로 받아 오디오 샘플과 키프레임 샘플을 잘라낸다.
+// 성대 vod.skku.edu는 느리다(실측 2026-10-14: 연결 하나 약 0.2~0.4MB/s, 여러 연결로 나눠도 합계가 늘지 않음).
+// 그래서 구간 전체가 아니라 필요한 바이트(음성 샘플 + 2초마다 키프레임)만 받는다. 실측 2분 구간:
+// upf 1080p 24.0→14.4MB, video1 16.6→9.1MB, video2 sub 16.5→4.6MB. 간격이 RUN_GAP 이하인 샘플은 한 요청으로 묶는다.
+export const RUN_GAP = 16 << 10;
+const RUN_CONCURRENCY = 4;
+export function byteRuns(samples, gap = RUN_GAP) {
+  const runs = [];
+  for (const s of [...samples].sort((a, b) => a.offset - b.offset)) {
+    const last = runs.at(-1);
+    if (last && s.offset - last[1] <= gap) last[1] = Math.max(last[1], s.offset + s.size);
+    else runs.push([s.offset, s.offset + s.size]);
+  }
+  return runs;
+}
+// 여러 묶음을 동시에(최대 RUN_CONCURRENCY) 받는다. 하나가 실패하면 나머지도 멈추고 그 오류를 한 번만 알린다.
+export async function fetchRuns(src, url, runs, { signal, concurrency = RUN_CONCURRENCY } = {}) {
+  if (signal?.aborted) throw abortError(signal);
+  const ctl = new AbortController();
+  const onAbort = () => ctl.abort(signal.reason);
+  signal?.addEventListener('abort', onAbort, { once: true });
+  const out = new Array(runs.length);
+  let next = 0, failure = null;
+  const worker = async () => {
+    while (!failure && next < runs.length) {
+      const i = next++, [a, b] = runs[i];
+      try {
+        // 묶음마다 206과 크기를 확인한다(maxBytes 경로). Range를 무시하는 서버의 전체 파일은 받지 않는다.
+        const chunk = await src.getRange(url, a, b - 1, { signal: ctl.signal, maxBytes: b - a });
+        if (chunk.length !== b - a) throw new Error(`영상 조각 크기가 다릅니다 (${chunk.length}/${b - a}).`);
+        out[i] = chunk;
+      } catch (err) { if (!failure) { failure = err; ctl.abort(err); } }
+    }
+  };
+  try { await Promise.all(Array.from({ length: Math.min(concurrency, runs.length) }, worker)); }
+  finally { signal?.removeEventListener('abort', onAbort); }
+  if (signal?.aborted) throw abortError(signal);
+  if (failure) throw failure;
+  return out;
+}
+
+// [t0, t1) 구간의 오디오 샘플과 키프레임 샘플을 받아 잘라낸다. 묶음이 하나면 예전처럼 한 번의 Range 요청이다.
 // slideEvery: 키프레임을 몇 초 간격으로 쓸지 (슬라이드 감지 해상도)
 export async function fetchWindow(src, mp4, t0, t1, { slideEvery = 2, signal, maxBytes = Infinity } = {}) {
   const aS = mp4.audio.samples.filter((s) => { const t = sec(s, mp4.audio); return t >= t0 && t < t1; });
@@ -188,15 +253,22 @@ export async function fetchWindow(src, mp4, t0, t1, { slideEvery = 2, signal, ma
   }
   const all = aS.concat(vS);
   if (!all.length) return { audio: [], keyframes: [], bytes: 0 };
-  const start = Math.min(...all.map((s) => s.offset));
-  const end = Math.max(...all.map((s) => s.offset + s.size));
-  if (end - start > maxBytes) throw prefetchLimit();
-  const buf = await src.getRange(mp4.mediaUrl, start, end - 1, { signal, maxBytes });
-  const cut = (s) => buf.subarray(s.offset - start, s.offset - start + s.size);
+  const runs = byteRuns(all);
+  const total = runs.reduce((n, [a, b]) => n + b - a, 0);
+  if (total > maxBytes) throw prefetchLimit();
+  const bufs = runs.length === 1
+    ? [await src.getRange(mp4.mediaUrl, runs[0][0], runs[0][1] - 1, { signal, maxBytes })]
+    : await fetchRuns(src, mp4.mediaUrl, runs, { signal });
+  const starts = runs.map(([a]) => a);
+  const cut = (s) => {
+    let lo = 0, hi = runs.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= s.offset) lo = mid; else hi = mid - 1; }
+    return bufs[lo].subarray(s.offset - starts[lo], s.offset - starts[lo] + s.size);
+  };
   return {
     audio: aS.map((s) => ({ ts: sec(s, mp4.audio), dur: s.duration / mp4.audio.info.timescale, data: cut(s) })),
     keyframes: vS.map((s) => ({ ts: sec(s, mp4.video), data: cut(s) })),
-    bytes: buf.length,
+    bytes: total,
   };
 }
 

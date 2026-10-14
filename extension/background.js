@@ -5,6 +5,16 @@ import {SITE} from './src/site.js';
 
 const SELF=chrome.runtime.getURL('');
 const HOST='com.jwsj.host';
+// 영상 서버(성대 vod.skku.edu)는 Referer가 학교 주소가 아니면 mp4 대신 '접근 차단' HTML을 206으로 돌려준다(실측 2026-10-14).
+// 확장(오프스크린 문서, 탭 아님)이 보내는 영상 요청에만 학교 플레이어 주소를 Referer로 붙인다. 탭의 요청은 건드리지 않는다.
+const MEDIA_REFERER_RULE=1;
+export async function installMediaReferer(dnr=globalThis.chrome?.declarativeNetRequest){
+  if(!dnr?.updateSessionRules)return;
+  await dnr.updateSessionRules({removeRuleIds:[MEDIA_REFERER_RULE],addRules:[{id:MEDIA_REFERER_RULE,priority:1,
+    action:{type:'modifyHeaders',requestHeaders:[{header:'Referer',operation:'set',value:`${SITE.commonsOrigin}/`}]},
+    condition:{requestDomains:SITE.mediaOrigins.map(o=>new URL(o).hostname),tabIds:[-1],resourceTypes:['xmlhttprequest','media','other']}}]});
+}
+installMediaReferer().catch(e=>console.warn('영상 Referer 규칙 설정 실패',e));
 let storageTail=Promise.resolve(), engineCreation=null;
 const active=new Set(), deleted=new Set();
 const nativeJobs=new Map(),asrJobs=new Map();
@@ -258,7 +268,9 @@ export async function route(m,sender){
       if(m.type==='removeGroqKey'){await pauseAudioQueue();return nativeCall({cmd:'groqRemoveKey'});}
       if(m.type==='saveGroqKey')return nativeCall({cmd:'groqSaveKey',apiKey:m.apiKey});
       const r=await nativeCall({cmd:'groqTest'});
-      if((await state()).settings.asrConsent)await engine('resumeQueue');
+      // Groq 인증이 성공했는데 대기열 재개만 실패하면 키 문제처럼 보이지 않게 따로 알린다(klasnote B3).
+      if((await state()).settings.asrConsent)try{await engine('resumeQueue');}
+      catch{return {...r,queueResumed:false,queueResumeError:'Groq 연결은 성공했지만 로컬 대기열을 재개하지 못했어요. 확장을 새로고침한 뒤 다시 시도하세요.'};}
       return r;
     }
     if(!Object.hasOwn(uiHandlers,m.type))throw new Error('알 수 없는 요청');return uiHandlers[m.type](m,sender);

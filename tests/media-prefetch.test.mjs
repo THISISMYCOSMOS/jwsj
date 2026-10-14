@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSource, fetchWindow, decodeKeyframes, isAllowedMediaUrl } from '../extension/src/core/media.js';
+import { createSource, fetchWindow, decodeKeyframes, isAllowedMediaUrl, byteRuns, fetchRuns, aacLcConfig } from '../extension/src/core/media.js';
 import { SITE } from '../extension/src/site.js';
 
 test('only mp4 files under the school media origin are accepted', () => {
   const o = SITE.mediaOrigins[0];
   assert.equal(isAllowedMediaUrl(SITE.examples.media), true);
   assert.equal(isAllowedMediaUrl(`${o}/contents/a/ssmovie.mp4?x=1`), true);
+  assert.equal(isAllowedMediaUrl(`${o}/contents/a/media_files/mobile/ssaudio.m4a`), true); // 음성 전용 강의(성대 audio)
   for (const url of [`${o}.evil.test/ssmovie.mp4`, `${o}@evil.test/ssmovie.mp4`, `${o.replace('https:', 'http:')}/ssmovie.mp4`,
     `https://evil.test/${o}/ssmovie.mp4`, `${o}/contents/a/ssmovie.m3u8`, null, undefined])
     assert.equal(isAllowedMediaUrl(url), false, String(url));
@@ -137,4 +138,55 @@ test('streaming video emits one bitmap at a time and preserves caller ownership'
     const out=await decodeKeyframes(videoMp4,frames,{onFrame:async frame=>{received++;await tick();frame.bitmap.close();}});
     assert.equal(received,60);assert.equal(framesClosed,60);assert.equal(peak,1);assert.equal(open,0);assert.deepEqual(out,[]);
   });
+});
+
+test('a blocked media response (HTML page with 206) fails with a clear message instead of being parsed as mp4', async () => {
+  // vod.skku.edu answers a request without the school Referer with '접근 차단' HTML and status 206 (2026-10-14).
+  let canceled = false;
+  const src = createSource(async () => ({ status: 206, headers: new Headers({ 'content-type': 'text/html' }), body: { cancel() { canceled = true; } }, arrayBuffer: async () => new ArrayBuffer(16) }));
+  await assert.rejects(src.getRange(SITE.examples.media, 0, 15), /접근 차단/);
+  assert.equal(canceled, true);
+  const ok = createSource(async () => ({ status: 206, headers: new Headers({ 'content-type': 'video/mp4' }), arrayBuffer: async () => new Uint8Array([1, 2]).buffer }));
+  assert.deepEqual([...await ok.getRange(SITE.examples.media, 0, 1)], [1, 2]);
+});
+
+test('only the needed bytes are fetched: samples closer than the gap share one request, far ones get their own', async () => {
+  assert.deepEqual(byteRuns([{ offset: 100, size: 10 }, { offset: 0, size: 10 }, { offset: 15, size: 5 }], 8), [[0, 20], [100, 110]]);
+  const file = Uint8Array.from({ length: 200 }, (_, i) => i);
+  const calls = [];
+  const src = { getRange: async (url, s, e, opts) => { calls.push([s, e, opts.maxBytes]); await new Promise(r => setTimeout(r, (200 - s) % 5)); return file.slice(s, e + 1); } };
+  // two audio samples near each other and one keyframe far away (beyond the 16 KB gap in real files; offsets are scaled here)
+  const mp4 = { mediaUrl: 'media',
+    audio: { info: { timescale: 1 }, samples: [{ cts: 0, duration: 1, offset: 10, size: 4 }, { cts: 1, duration: 1, offset: 14, size: 4 }] },
+    video: { info: { timescale: 1 }, samples: [{ cts: 0, is_sync: true, offset: 120 + (16 << 10), size: 6 }] } };
+  const big = Uint8Array.from({ length: 140 + (16 << 10) }, (_, i) => i % 251);
+  const src2 = { getRange: async (url, s, e, opts) => { calls.push([s, e, opts.maxBytes]); return big.slice(s, e + 1); } };
+  const w = await fetchWindow(src2, mp4, 0, 120);
+  assert.equal(calls.length, 2, 'audio run + keyframe run, not one span over the gap');
+  assert.deepEqual([...w.audio[0].data], [...big.slice(10, 14)]);
+  assert.deepEqual([...w.audio[1].data], [...big.slice(14, 18)]);
+  assert.deepEqual([...w.keyframes[0].data], [...big.slice(120 + (16 << 10), 126 + (16 << 10))]);
+  assert.equal(w.bytes, 8 + 6);
+  calls.length = 0;
+  const out = await fetchRuns(src, 'u', [[0, 10], [50, 60], [120, 130], [180, 200]], { concurrency: 2 });
+  assert.deepEqual(out.map(b => [...b]), [[...file.slice(0, 10)], [...file.slice(50, 60)], [...file.slice(120, 130)], [...file.slice(180, 200)]]);
+  assert.ok(calls.every(([s, e, max]) => max === e - s + 1), 'each run checks its own size');
+});
+
+test('a failing run stops the other runs and the error is reported once', async () => {
+  let aborted = 0;
+  const src = { getRange: (url, s, e, { signal }) => new Promise((resolve, reject) => {
+    if (s === 16) { reject(new Error('run failed')); return; }
+    signal.addEventListener('abort', () => { aborted++; reject(signal.reason); }, { once: true });
+  }) };
+  await assert.rejects(fetchRuns(src, 'u', [[0, 8], [16, 24], [32, 40], [48, 56]], { concurrency: 4 }), /run failed/);
+  assert.equal(aborted, 3);
+});
+
+test('an audio track without esds gets an AAC-LC config built from its rate and channels', () => {
+  // the real SKKU file with esds carries 12 10 for 44.1 kHz stereo; the broken 2.7 s clip had none (2026-10-14)
+  assert.deepEqual([...aacLcConfig(44100, 2)], [0x12, 0x10]);
+  assert.deepEqual([...aacLcConfig(48000, 1)], [0x11, 0x88]);
+  assert.equal(aacLcConfig(44000, 2), undefined);
+  assert.equal(aacLcConfig(44100, 0), undefined);
 });
