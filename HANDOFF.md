@@ -1,7 +1,7 @@
 # HANDOFF — klasnote (klas-summarizer)
 
 갱신: 2026-10-05, 브랜치 `fix/low-memory-asr`(기준 커밋 `e098f94`). 원래 2026-10-04 Claude → Codex 인계 문서였고, 커밋 `5566eaf`부터 받아쓰기 구조가 바뀌어 현재 코드에 맞게 다시 썼다. 공개 저장소: https://github.com/THISISMYCOSMOS/klasnote.
-사용자 언어는 한국어, 에이전트 간 인계는 영어. 표시 이름은 `klasnote`(manifest `name`)이고 확장 ID(manifest `key`)·네이티브 호스트 이름 `com.klas_summarizer.host`·설치 폴더 `KlasSummarizer`·다운로드 폴더 `KLAS요약`은 그대로다. 구 브라우저 Whisper(transformers.js/ONNX/WebGPU) 설명은 모두 삭제했고 필요한 기록만 §9에 "역사"로 남겼다.
+사용자 언어는 한국어, 에이전트 간 인계는 영어. 표시 이름은 `지우사랑해`(manifest `name`)다. 광운대 klasnote와 같은 PC에 함께 설치되도록 확장 ID(manifest `key` → `ongnnbhdedfhijimkccikfdbkigemkfn`)·네이티브 호스트 이름 `com.jwsj.host`·설치 폴더 `Jwsj`·배포 ZIP `jwsj-<버전>.zip`을 klasnote와 다르게 했다. 다운로드 폴더는 `icampus요약`(sites/skku.js). 구 브라우저 Whisper(transformers.js/ONNX/WebGPU) 설명은 모두 삭제했고 필요한 기록만 §9에 "역사"로 남겼다.
 
 ## 0. jwsj 저장소 (2026-10-09, 성균관대 icampus 빌드)
 - 이 저장소는 klasnote(광운대)를 바탕으로 한 **성균관대 icampus 전용 빌드**다. `extension/src/site.js`가 `sites/skku.js`를 가리키고, manifest의 권한·콘텐츠 스크립트가 성대 주소다. 광운대로 되돌리려면 site.js를 `sites/kw.js`로, manifest 사이트 항목을 커밋 69845c8의 것으로 바꾼다(테스트는 두 설정 모두 통과).
@@ -83,7 +83,7 @@ HTML에 표시하는 받아쓰기 모델명은 호스트가 응답한 `result.mo
 개인 학습용 한정(공유 서버·공용 토큰 캐시 없음), 각 사용자가 본인 계정을 쓴다.
 
 ## 7. 설치 흐름 (코드 기준)
-- `install.cmd` → `scripts/setup.mjs --install-only`: `%LOCALAPPDATA%\KlasSummarizer`(Mac `~/Library/Application Support/KlasSummarizer`)에 `extension/`, `host.mjs`, `groq.mjs`, `host.bat`(`node.exe` 절대 경로), `host-config.json`, 소유 확인 파일을 쓰고, HKCU `Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host`를 등록한다(Mac은 NativeMessagingHosts 폴더). 다른 폴더·다른 호스트 등록이 있으면 보존하고 중단한다. 사용자는 `chrome://extensions`에서 설치된 `extension/` 폴더를 압축해제 로드한다.
+- `install.cmd` → `scripts/setup.mjs --install-only`: `%LOCALAPPDATA%\Jwsj`(Mac `~/Library/Application Support/Jwsj`)에 `extension/`, `host.mjs`, `groq.mjs`, `host.bat`(`node.exe` 절대 경로), `host-config.json`, 소유 확인 파일을 쓰고, HKCU `Software\Google\Chrome\NativeMessagingHosts\com.jwsj.host`를 등록한다(Mac은 NativeMessagingHosts 폴더). 다른 폴더·다른 호스트 등록이 있으면 보존하고 중단한다. 사용자는 `chrome://extensions`에서 설치된 `extension/` 폴더를 압축해제 로드한다.
 - 처음 설정: 동의 화면 → 설정에서 Groq 키 저장·음성 전송 동의 → (선택) Claude/Codex 로그인. `groq-config.json`은 호스트 폴더에 저장되며 `uninstall.ps1`이 폴더째 삭제한다.
 - `start.cmd` → `scripts/start.mjs`: 전용 Chrome 프로필로 확장을 연결하는 대체 경로(영구 등록 아님).
 - 패키지: `scripts/build-package.mjs`가 `native-host/groq.mjs`를 포함한다.

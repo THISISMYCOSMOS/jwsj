@@ -24,7 +24,7 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-set "EXT=%LOCALAPPDATA%\KlasSummarizer\extension"
+set "EXT=%LOCALAPPDATA%\Jwsj\extension"
 <nul set /p="%EXT%"| clip
 echo.
 echo ============================================================

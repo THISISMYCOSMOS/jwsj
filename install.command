@@ -10,7 +10,7 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 node scripts/setup.mjs --install-only || { echo "설치하지 못했습니다. 위 오류를 확인하세요."; read -r _; exit 1; }
-EXT="$HOME/Library/Application Support/KlasSummarizer/extension"
+EXT="$HOME/Library/Application Support/Jwsj/extension"
 printf '%s' "$EXT" | pbcopy 2>/dev/null
 echo ""
 echo "설치 완료. 확장 폴더 경로를 클립보드에 복사했습니다:"

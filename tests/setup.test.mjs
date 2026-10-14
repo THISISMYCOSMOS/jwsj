@@ -17,8 +17,8 @@ test('installer preserves an existing unowned folder',()=>{
   assert.throws(()=>validateTarget(folder,null),/기존 파일을 보존/);
 });
 test('installer accepts owned update but preserves a conflicting host registration',()=>{
-  const folder=path.join(root,'owned');fs.mkdirSync(folder,{recursive:true});fs.writeFileSync(path.join(folder,'.klas-summarizer-host'),'com.klas_summarizer.host');
-  assert.equal(validateTarget(folder,null),path.join(folder,'com.klas_summarizer.host.json'));
+  const folder=path.join(root,'owned');fs.mkdirSync(folder,{recursive:true});fs.writeFileSync(path.join(folder,'.klas-summarizer-host'),'com.jwsj.host');
+  assert.equal(validateTarget(folder,null),path.join(folder,'com.jwsj.host.json'));
   assert.throws(()=>validateTarget(folder,path.join(root,'another-host.json')),/기존 등록을 보존/);
 });
 test('Windows batch files ship with CRLF so cmd.exe reaches the install step',()=>{

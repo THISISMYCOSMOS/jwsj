@@ -1,14 +1,14 @@
 # klasnote (클라스노트) — 성균관대 icampus용
 
 성균관대 icampus(아이캠퍼스) 녹화 강의를 **Groq에서 받아쓰고**, 슬라이드와 함께 **복습용 HTML 한 파일**로 정리해 주는 Chrome 확장입니다. 음성 인식은 PC가 아니라 Groq 서버에서 하므로 노트북에 부담이 거의 없습니다(실측: 처리 중 Chrome CPU 평균 약 2%).
-> 이 저장소는 **성균관대 icampus(canvas.skku.edu) 전용**입니다. 광운대 KLAS용은 [klasnote 저장소](https://github.com/THISISMYCOSMOS/klasnote)를 쓰세요. 둘은 같은 PC에 함께 설치할 수 없어요(설치 폴더가 같아서 나중에 설치한 쪽이 덮어써요).
+> 이 저장소는 **성균관대 icampus(canvas.skku.edu) 전용**입니다. 광운대 KLAS용은 [klasnote 저장소](https://github.com/THISISMYCOSMOS/klasnote)를 쓰세요. 둘은 확장 이름·ID·설치 폴더·연결 프로그램 등록이 서로 달라서 같은 PC에 함께 설치해도 덮어쓰지 않아요. 이 저장소의 확장은 Chrome에 **지우사랑해**라는 이름으로 보여요.
 
 원하면 내 Claude Code 또는 Codex 계정으로 요약·시험 포인트까지 붙여 줍니다(요약용 API 키는 필요 없음). 받아쓰기에는 본인의 Groq Free 계정 API 키가 필요합니다.
 
 > 비공식 개인 학습용 도구입니다. 출석·진도·인증에는 손대지 않습니다.
 > 설치·사용 전에 **[사용 금지 사항](#9-사용-금지-사항-꼭-읽어-주세요)** 을 꼭 읽어 주세요. 사용하면 이에 동의한 것으로 봅니다.
 
-### [⬇ 설치 파일 받기 — klasnote-0.2.0.zip (Windows · Mac 공용)](downloads/klasnote-0.2.0.zip?raw=true)
+### [⬇ 설치 파일 받기 — jwsj-0.2.0.zip (Windows · Mac 공용)](downloads/jwsj-0.2.0.zip?raw=true)
 
 ![결과 파일 예시](docs/images/05-report.png)
 
@@ -38,14 +38,14 @@
 ### Windows
 
 1. **ZIP 압축 풀기**
-   - 받은 `klasnote-0.2.0.zip`을 **마우스 오른쪽 버튼 → 모두 압축 풀기 → 압축 풀기**로 풉니다.
+   - 받은 `jwsj-0.2.0.zip`을 **마우스 오른쪽 버튼 → 모두 압축 풀기 → 압축 풀기**로 풉니다.
    - ZIP을 더블클릭해 안에 보이는 `install.cmd`를 바로 실행하면 안 돼요. 그러면 "압축을 풀지 않은 상태에서 실행했습니다"가 뜹니다.
-   - ✅ 확인: 풀린 `klasnote` 폴더 안에 `install.cmd`, `extension`, `scripts`, `native-host` 폴더가 보여요.
+   - ✅ 확인: 풀린 `jwsj` 폴더 안에 `install.cmd`, `extension`, `scripts`, `native-host` 폴더가 보여요.
 2. **`install.cmd` 실행**
    - 풀린 폴더의 **`install.cmd`** 를 더블클릭합니다.
    - "Windows의 PC 보호" 파란 창이 뜨면 **추가 정보 → 실행**을 누르세요(서명되지 않은 파일이라 뜨는 안내예요).
    - 관리자 권한은 필요 없어요. 하는 일은 세 가지예요.
-     - 확장 파일을 `%LOCALAPPDATA%\KlasSummarizer`에 복사
+     - 확장 파일을 `%LOCALAPPDATA%\Jwsj`에 복사
      - 연결 프로그램을 현재 사용자 계정에만 등록
      - 확장 폴더 경로를 클립보드에 복사하고 그 폴더를 열기
    - ✅ 확인: 검은 창에 **"설치 완료. 확장 폴더 경로를 클립보드에 복사했습니다."** 가 보이고, `extension` 폴더 탐색기 창이 열려요. 이 검은 창은 아무 키나 눌러 닫아도 됩니다.
@@ -56,32 +56,32 @@
 4. **확장 폴더 등록**
    - 왼쪽 위에 생긴 **압축해제된 확장 프로그램을 로드합니다**를 클릭합니다.
    - 폴더 선택 창 위쪽 주소칸을 클릭하고 **Ctrl+V**(경로가 이미 복사돼 있어요) → **Enter** → **폴더 선택**.
-   - 붙여 넣을 경로: `%LOCALAPPDATA%\KlasSummarizer\extension` (보통 `C:\Users\<내 이름>\AppData\Local\KlasSummarizer\extension`)
-   - 반드시 **`extension` 폴더 자체**를 고르세요. 한 단계 위 `KlasSummarizer`나 ZIP을 푼 `klasnote` 폴더를 고르면 "매니페스트 파일이 없거나 읽을 수 없습니다"가 떠요.
-   - ✅ 확인: 확장 목록에 **klasnote** 카드가 생기고 스위치가 켜져 있어요. 처음 설정 탭이 자동으로 열립니다.
+   - 붙여 넣을 경로: `%LOCALAPPDATA%\Jwsj\extension` (보통 `C:\Users\<내 이름>\AppData\Local\Jwsj\extension`)
+   - 반드시 **`extension` 폴더 자체**를 고르세요. 한 단계 위 `Jwsj`나 ZIP을 푼 `jwsj` 폴더를 고르면 "매니페스트 파일이 없거나 읽을 수 없습니다"가 떠요.
+   - ✅ 확인: 확장 목록에 **지우사랑해** 카드가 생기고 스위치가 켜져 있어요. 처음 설정 탭이 자동으로 열립니다.
 5. **처음 설정**: [3. 처음 설정](#3-처음-설정)으로 이어서 진행합니다. 이미 열어 둔 icampus 강의콘텐츠 탭은 **F5로 새로고침**해야 버튼이 생겨요.
 
 ### Mac
 
-1. 받은 ZIP을 더블클릭해 풉니다. 풀린 `klasnote` 폴더 안에 `install.command`와 `extension` 폴더가 보이면 됩니다.
+1. 받은 ZIP을 더블클릭해 풉니다. 풀린 `jwsj` 폴더 안에 `install.command`와 `extension` 폴더가 보이면 됩니다.
 2. **터미널**(응용 프로그램 → 유틸리티)을 엽니다. `sh ` (sh 다음 띄어쓰기 한 칸)를 입력한 뒤, 풀린 폴더의 **`install.command`** 파일을 터미널 창으로 끌어다 놓고 Enter를 누릅니다.
    - ✅ 확인: "설치 완료. 확장 폴더 경로를 클립보드에 복사했습니다"가 보이고 Finder 창이 열려요.
    - Node.js를 Homebrew로 설치했다면 `/opt/homebrew/bin`의 node도 자동으로 찾아요.
 3. Chrome에서 `chrome://extensions` → 오른쪽 위 **개발자 모드** 켜기 → **압축해제된 확장 프로그램을 로드합니다**.
 4. 폴더 선택 창에서 **Cmd+Shift+G** → 붙여넣기(**Cmd+V**) → 이동 → **선택**.
-   - 경로: `~/Library/Application Support/KlasSummarizer/extension`
-5. 확장 목록에서 klasnote가 켜져 있는지 확인하고, 이미 열어 둔 icampus 강의콘텐츠 탭을 새로고침한 뒤 [처음 설정](#3-처음-설정)을 진행하세요.
+   - 경로: `~/Library/Application Support/Jwsj/extension`
+5. 확장 목록에서 지우사랑해가 켜져 있는지 확인하고, 이미 열어 둔 icampus 강의콘텐츠 탭을 새로고침한 뒤 [처음 설정](#3-처음-설정)을 진행하세요.
 
 > Mac 지원은 코드와 자동 테스트로 확인했고, **실제 Mac 기기에서는 아직 검증 전**입니다. 문제가 있으면 알려 주세요.
 
 ### 업데이트·재설치
 
-설치 위치: Windows `%LOCALAPPDATA%\KlasSummarizer`, Mac `~/Library/Application Support/KlasSummarizer` (관리자 권한 필요 없음).
+설치 위치: Windows `%LOCALAPPDATA%\Jwsj`, Mac `~/Library/Application Support/Jwsj` (관리자 권한 필요 없음).
 
 새 버전이 나오면 아래 순서로 진행하세요.
 1. **진행 중인 처리가 끝날 때까지** 기다립니다.
 2. 새 ZIP을 풀고 `install`을 다시 실행합니다.
-3. `chrome://extensions`에서 klasnote의 **새로고침(↻)** 을 누릅니다.
+3. `chrome://extensions`에서 지우사랑해의 **새로고침(↻)** 을 누릅니다.
 4. **열려 있는 icampus 페이지도 새로고침(F5)** 합니다. 페이지를 새로고침하지 않으면 목록 버튼이 "이 페이지를 새로고침(F5)한 뒤 다시 눌러 주세요"라고 안내해요.
 
 같은 설치 폴더를 쓰므로 확장을 삭제하거나 다시 등록할 필요는 없고, 저장한 Groq 키도 그대로 남아요.
@@ -101,10 +101,10 @@
 | 설치 창 | Node.js LTS가 필요합니다 | Node.js가 없거나 설치 직후 창이 갱신되지 않음 | Node.js LTS 설치 → 탐색기 창을 모두 닫고 다시 `install.cmd` 실행. 그래도 안 되면 PC 재시작 |
 | 설치 창 | Node.js 18 이상이 필요합니다(현재 16.…) | Node.js가 너무 오래됨 | [nodejs.org](https://nodejs.org/)에서 LTS를 새로 설치 후 다시 실행 |
 | 설치 창 | 설치 파일 누락: … 설치 ZIP을 다시 풀어주세요. | 압축 풀기가 중간에 실패했거나 백신이 파일을 지움 | ZIP을 새 폴더에 다시 풀고 실행 |
-| 설치 창 | 다른 폴더가 이미 있습니다. 기존 파일을 보존하고 설치를 중단합니다. | `%LOCALAPPDATA%\KlasSummarizer`에 설치 프로그램이 만들지 않은 폴더가 있음 | 그 폴더 이름을 바꾸거나 다른 곳으로 옮긴 뒤 다시 실행 |
-| 설치 창 | 다른 네이티브 호스트가 등록되어 있습니다. 기존 등록을 보존합니다. | 다른 위치에 설치한 예전 klasnote(개발용 등)가 등록돼 있음 | [아래 "예전 등록 정리"](#예전-등록-정리)대로 그 등록만 지운 뒤 다시 설치 (`uninstall.ps1`은 다른 위치 등록을 지우지 않아요) |
+| 설치 창 | 다른 폴더가 이미 있습니다. 기존 파일을 보존하고 설치를 중단합니다. | `%LOCALAPPDATA%\Jwsj`에 설치 프로그램이 만들지 않은 폴더가 있음 | 그 폴더 이름을 바꾸거나 다른 곳으로 옮긴 뒤 다시 실행 |
+| 설치 창 | 다른 네이티브 호스트가 등록되어 있습니다. 기존 등록을 보존합니다. | 다른 위치에 설치한 예전 설치본(개발용 등)가 등록돼 있음 | [아래 "예전 등록 정리"](#예전-등록-정리)대로 그 등록만 지운 뒤 다시 설치 (`uninstall.ps1`은 다른 위치 등록을 지우지 않아요) |
 | 설치 창 | 지원하지 않는 설치 경로 문자 | Windows 사용자 이름이나 Node 경로에 `%` 또는 `"`가 들어 있음 | 이 경우는 지원하지 않아요. 알려 주세요 |
-| Chrome | 매니페스트 파일이 없거나 읽을 수 없습니다 | `extension` 폴더가 아닌 다른 폴더를 고름 | `…\KlasSummarizer\extension` 폴더 자체를 선택 |
+| Chrome | 매니페스트 파일이 없거나 읽을 수 없습니다 | `extension` 폴더가 아닌 다른 폴더를 고름 | `…\Jwsj\extension` 폴더 자체를 선택 |
 | 설정·패널 | 연결 프로그램이 설치되지 않았어요 | `install`을 실행하지 않았거나 다른 앱 안에서 실행함 | 탐색기에서 `install.cmd`를 직접 다시 실행 → `chrome://extensions`에서 klasnote 새로고침(↻) |
 | 설정·패널 | 연결 프로그램이 이 확장을 허용하지 않아요 | 등록 정보와 확장 ID가 맞지 않음 | `install` 다시 실행 후 설치된 `extension` 폴더를 다시 로드 |
 | 설정·패널 | 연결 프로그램이 실행되지 않았어요 | 설치 후 Node.js를 지우거나 다른 버전으로 바꿈 | Node.js LTS 설치 후 `install` 다시 실행(설치 때의 Node 위치를 기억해서 써요) |
@@ -113,10 +113,10 @@
 <a id="예전-등록-정리"></a>
 <details><summary>예전 등록 정리 (Windows)</summary>
 
-먼저 `reg query "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host" /ve`로 어디를 가리키는지 확인하세요. 예전 klasnote 폴더(또는 이미 없는 경로)가 맞다면, 명령 프롬프트에서 아래 명령을 실행하면 klasnote 연결 프로그램 등록만 지워요. 다른 프로그램 등록은 건드리지 않습니다. 실행 후 `install.cmd`를 다시 실행하세요.
+먼저 `reg query "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.jwsj.host" /ve`로 어디를 가리키는지 확인하세요. 예전 설치 폴더(또는 이미 없는 경로)가 맞다면, 명령 프롬프트에서 아래 명령을 실행하면 이 확장의 연결 프로그램 등록만 지워요(광운대 klasnote 등록은 이름이 달라 그대로 남아요). 다른 프로그램 등록은 건드리지 않습니다. 실행 후 `install.cmd`를 다시 실행하세요.
 
 ```
-reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host" /f
+reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.jwsj.host" /f
 ```
 </details>
 
@@ -144,7 +144,7 @@ reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer
 1. klasnote 설정 화면을 엽니다. 여는 방법은 세 가지예요.
    - 처음 설정에서 계속을 누르면 자동으로 열려요.
    - 키 없이 icampus 강의콘텐츠에서 **지금 요약**을 누르면 설정 화면이 자동으로 열려요.
-   - Chrome 오른쪽 위 퍼즐 아이콘 → klasnote → 오른쪽 패널의 **설정**. 또는 `chrome://extensions` → klasnote **세부정보** → **확장 프로그램 옵션**.
+   - Chrome 오른쪽 위 퍼즐 아이콘 → 지우사랑해 → 오른쪽 패널의 **설정**. 또는 `chrome://extensions` → 지우사랑해 **세부정보** → **확장 프로그램 옵션**.
 2. 맨 위 **Groq 받아쓰기** 칸의 **API 키**에 붙여넣습니다(Ctrl+V). 입력한 글자는 가려져 보여요.
 3. **강의 음성을 Groq로 보내 받아쓰는 데 동의합니다**에 체크합니다.
 4. **키·동의 저장**을 누릅니다. 저장 직후 연결 확인까지 자동으로 해요(음성 한도는 쓰지 않아요).
@@ -261,7 +261,7 @@ reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer
 없어요. 플레이어를 조작하지 않고 영상 파일만 따로 읽어요. 출석은 평소처럼 icampus에서 강의를 들어야 인정돼요.
 
 ## 8. 제거
-- Chrome: `chrome://extensions`에서 klasnote **삭제**
+- Chrome: `chrome://extensions`에서 지우사랑해 **삭제**
 - Windows: 폴더의 `uninstall.ps1`을 오른쪽 클릭 → PowerShell에서 실행
 - Mac: 터미널에서 `sh uninstall.command`
 - 브라우저에 남은 강의 기록은 먼저 **설정 → 로컬 기록 → 기록 삭제**로 지우세요. 이미 받은 HTML 파일은 남아요.
@@ -317,7 +317,7 @@ reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer
 npm ci
 node scripts/vendor.mjs          # 처리 라이브러리를 extension/vendor로 복사
 npm test                         # 테스트
-node scripts/build-package.mjs   # downloads/klasnote-<버전>.zip 생성
+node scripts/build-package.mjs   # downloads/jwsj-<버전>.zip 생성
 node scripts/doctor.mjs          # 설치 상태 진단(읽기 전용)
 ```
 - 학교 설정: `extension/src/site.js`가 `sites/skku.js`(성대)를 가리켜요. 광운대 빌드는 이 줄을 `sites/kw.js`로, `manifest.json`의 사이트 항목(권한·콘텐츠 스크립트)을 광운대 것으로 바꾸면 돼요. `downloads/klasnote-0.1.4.zip`은 광운대 버전이에요.

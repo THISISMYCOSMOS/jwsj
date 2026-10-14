@@ -5,8 +5,8 @@ import os from 'node:os';
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
-export const HOST_NAME = 'com.klas_summarizer.host';
-export const EXTENSION_ID = 'klihhclhnhhmldcbnkpampimkjafmbdm';
+export const HOST_NAME = 'com.jwsj.host';
+export const EXTENSION_ID = 'ongnnbhdedfhijimkccikfdbkigemkfn';
 export const HELPER_ID = 'jicidjkhiefbhbgbfbemakjndloecjlf'; // KLAS Helper (있으면 같은 창에 함께 연결)
 
 export function platformPaths({ platform = process.platform, env = process.env, home = os.homedir() } = {}) {
@@ -16,7 +16,7 @@ export function platformPaths({ platform = process.platform, env = process.env, 
     const local = env.LOCALAPPDATA;
     return {
       platform,
-      installRoot: p.join(local, 'KlasSummarizer'),
+      installRoot: p.join(local, 'Jwsj'),
       chromeCandidates: [env.PROGRAMFILES, env['PROGRAMFILES(X86)'], local].filter(Boolean)
         .map((d) => p.join(d, 'Google', 'Chrome', 'Application', 'chrome.exe')),
       helperRoot: p.join(local, 'Google', 'Chrome', 'User Data', 'Default', 'Extensions', HELPER_ID),
@@ -30,7 +30,7 @@ export function platformPaths({ platform = process.platform, env = process.env, 
     const support = p.join(home, 'Library', 'Application Support');
     return {
       platform,
-      installRoot: p.join(support, 'KlasSummarizer'),
+      installRoot: p.join(support, 'Jwsj'),
       chromeCandidates: [
         '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         p.join(home, 'Applications', 'Google Chrome.app', 'Contents', 'MacOS', 'Google Chrome'),

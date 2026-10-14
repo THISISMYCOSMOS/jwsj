@@ -40,7 +40,7 @@ test('the node path is read back from both launcher formats', () => {
 });
 
 test('school or company Chrome policies that block the extension or its host are reported', () => {
-  const id = 'klihhclhnhhmldcbnkpampimkjafmbdm';
+  const id = 'ongnnbhdedfhijimkccikfdbkigemkfn';
   assert.deepEqual(policyProblems({}), []);
   for (const p of [{ExtensionDeveloperModeSettings: '1'}, {DeveloperToolsAvailability: '2'}, {NativeMessagingUserLevelHosts: '0'},
     {ExtensionInstallBlocklist: ['*']}, {ExtensionInstallBlacklist: ['*']}, {ExtensionAllowedTypes: ['theme']},
@@ -48,7 +48,7 @@ test('school or company Chrome policies that block the extension or its host are
     {NativeMessagingBlocklist: ['*']}, {NativeMessagingBlacklist: ['*']}]) assert.equal(policyProblems(p).length, 1, JSON.stringify(p));
   for (const p of [{DeveloperToolsAvailability: '1'}, {ExtensionInstallBlocklist: ['*'], ExtensionInstallAllowlist: [id]}, {ExtensionInstallBlacklist: ['*'], ExtensionInstallWhitelist: [id]},
     {ExtensionAllowedTypes: ['extension', 'theme']}, {ExtensionSettings: `{"*":{"installation_mode":"blocked"},"${id}":{"installation_mode":"allowed"}}`},
-    {ExtensionSettings: 'not json'}, {NativeMessagingBlocklist: ['*'], NativeMessagingAllowlist: ['com.klas_summarizer.host']}]) assert.deepEqual(policyProblems(p), [], JSON.stringify(p));
+    {ExtensionSettings: 'not json'}, {NativeMessagingBlocklist: ['*'], NativeMessagingAllowlist: ['com.jwsj.host']}]) assert.deepEqual(policyProblems(p), [], JSON.stringify(p));
 });
 
 test('the host line reports a missing Groq key as a failure, never as saved', () => {

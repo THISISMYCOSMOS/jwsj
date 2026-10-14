@@ -5,7 +5,7 @@ import { platformPaths, macHostScript, HOST_NAME } from '../scripts/platform.mjs
 
 test('windows paths stay where the existing installer put them', () => {
   const p = platformPaths({ platform: 'win32', env: { LOCALAPPDATA: String.raw`C:\Users\u\AppData\Local`, PROGRAMFILES: String.raw`C:\Program Files` }, home: String.raw`C:\Users\u` });
-  assert.equal(p.installRoot, String.raw`C:\Users\u\AppData\Local\KlasSummarizer`);
+  assert.equal(p.installRoot, String.raw`C:\Users\u\AppData\Local\Jwsj`);
   assert.equal(p.chromeCandidates[0], String.raw`C:\Program Files\Google\Chrome\Application\chrome.exe`);
   assert.equal(p.hostManifestDir, null);
   assert.equal(p.hostLauncher, 'host.bat');
@@ -13,7 +13,7 @@ test('windows paths stay where the existing installer put them', () => {
 
 test('macOS paths use Application Support and the Chrome NativeMessagingHosts folder', () => {
   const p = platformPaths({ platform: 'darwin', env: {}, home: '/Users/kw' });
-  assert.equal(p.installRoot, '/Users/kw/Library/Application Support/KlasSummarizer');
+  assert.equal(p.installRoot, '/Users/kw/Library/Application Support/Jwsj');
   assert.equal(p.hostManifestDir, '/Users/kw/Library/Application Support/Google/Chrome/NativeMessagingHosts');
   assert.equal(p.chromeCandidates[0], '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
   assert.match(p.helperRoot, /\/Google\/Chrome\/Default\/Extensions\/jicidjkhiefbhbgbfbemakjndloecjlf$/);
@@ -25,13 +25,13 @@ test('unsupported platforms fail clearly', () => {
 });
 
 test('mac host script quotes paths with spaces and quotes, and is valid sh', () => {
-  const s = macHostScript({ nodePath: '/opt/homebrew/bin/node', hostPath: "/Users/k w/Library/Application Support/KlasSummarizer/host.mjs", home: "/Users/k'w" });
+  const s = macHostScript({ nodePath: '/opt/homebrew/bin/node', hostPath: "/Users/k w/Library/Application Support/Jwsj/host.mjs", home: "/Users/k'w" });
   assert.ok(s.startsWith('#!/bin/sh\n'));
-  assert.match(s, /exec '\/opt\/homebrew\/bin\/node' '\/Users\/k w\/Library\/Application Support\/KlasSummarizer\/host\.mjs'/);
+  assert.match(s, /exec '\/opt\/homebrew\/bin\/node' '\/Users\/k w\/Library\/Application Support\/Jwsj\/host\.mjs'/);
   assert.ok(s.includes(String.raw`'/Users/k'\''w/.local/bin'`), s);
   const check = spawnSync('sh', ['-n'], { input: s, encoding: 'utf8' });
   if (!check.error) assert.equal(check.status, 0, check.stderr);
-  assert.equal(HOST_NAME, 'com.klas_summarizer.host');
+  assert.equal(HOST_NAME, 'com.jwsj.host');
 });
 
 test('launcher liveness ignores missing, invalid and dead pid files', async () => {

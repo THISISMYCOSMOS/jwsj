@@ -52,15 +52,15 @@ Expected: `v18` or higher, and Chrome found in one of the locations.
 
 ## 3. Get and extract the package
 
-The ZIP is `downloads/klasnote-<version>.zip` in this repository (the README download link). It must be **fully extracted**. Running `install.cmd` from inside the ZIP stops with "압축을 풀지 않은 상태에서 실행했습니다."
+The ZIP is `downloads/jwsj-<version>.zip` in this repository (the README download link). It must be **fully extracted**. Running `install.cmd` from inside the ZIP stops with "압축을 풀지 않은 상태에서 실행했습니다."
 
 Windows:
 ```powershell
-Expand-Archive -Path "$HOME\Downloads\klasnote-0.2.0.zip" -DestinationPath "$HOME\Downloads\klasnote-0.2.0" -Force
+Expand-Archive -Path "$HOME\Downloads\jwsj-0.2.0.zip" -DestinationPath "$HOME\Downloads\jwsj-0.2.0" -Force
 ```
 macOS:
 ```sh
-ditto -x -k ~/Downloads/klasnote-0.2.0.zip ~/Downloads/klasnote-0.2.0
+ditto -x -k ~/Downloads/jwsj-0.2.0.zip ~/Downloads/jwsj-0.2.0
 ```
 Verify: the extracted folder contains `install.cmd` / `install.command`, `extension/`, `scripts/`, `native-host/`.
 
@@ -80,11 +80,11 @@ Expected: `설치 묶음 검사 통과: 5개 필수 파일, 버전 …. 설치·
 
 **Alternative (only from a normal, non-sandboxed user terminal):** in the extracted folder, run `node scripts/setup.mjs --install-only`.
 
-Expected output: `설치 완료: <path>/KlasSummarizer/extension`. `install.cmd` additionally prints "설치 완료. 확장 폴더 경로를 클립보드에 복사했습니다." and opens the folder.
+Expected output: `설치 완료: <path>/Jwsj/extension`. `install.cmd` additionally prints "설치 완료. 확장 폴더 경로를 클립보드에 복사했습니다." and opens the folder.
 
 What it does (nothing else):
 - copies `extension/`, `host.mjs`, `groq.mjs` into the install folder (§8), writes `host.bat`/`host.sh` (pins an absolute Node path) and `host-config.json`;
-- registers the host for the current user only: Windows `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host` → `<install>\com.klas_summarizer.host.json`; macOS writes `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.klas_summarizer.host.json`;
+- registers the host for the current user only: Windows `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.jwsj.host` → `<install>\com.jwsj.host.json`; macOS writes `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.jwsj.host.json`;
 - refuses to overwrite a folder or registration it did not create (see §6).
 
 ---
@@ -94,14 +94,14 @@ What it does (nothing else):
 Tell the user, in Korean:
 1. Open `chrome://extensions` in their **normal** Chrome profile and switch on **개발자 모드** (top right).
 2. Click **압축해제된 확장 프로그램을 로드합니다** and choose the **`extension` folder itself**:
-   - Windows: `%LOCALAPPDATA%\KlasSummarizer\extension` (paste into the folder dialog's address bar, Enter, **폴더 선택**)
-   - macOS: `~/Library/Application Support/KlasSummarizer/extension` (**Cmd+Shift+G** in the dialog)
+   - Windows: `%LOCALAPPDATA%\Jwsj\extension` (paste into the folder dialog's address bar, Enter, **폴더 선택**)
+   - macOS: `~/Library/Application Support/Jwsj/extension` (**Cmd+Shift+G** in the dialog)
    - Picking the parent folder gives "매니페스트 파일이 없거나 읽을 수 없습니다".
-3. A **klasnote** card appears and the first-setup tab (처음 설정) opens. They choose a mode, tick **Groq 음성 전송에 동의합니다**, and click **계속**. The settings page opens.
+3. A **지우사랑해** card appears and the first-setup tab (처음 설정) opens. They choose a mode, tick **Groq 음성 전송에 동의합니다**, and click **계속**. The settings page opens.
 4. Groq key: the user creates a key at https://console.groq.com/keys (**Create API Key**; it starts with `gsk_` and is shown only once). They paste it into **API 키**, tick **강의 음성을 Groq로 보내 받아쓰는 데 동의합니다** and click **키·동의 저장**. Success message: "저장 완료 · Groq 연결 성공. 강의 목록에서 "지금 요약"을 누르세요."
 5. They reload any open icampus tab with **F5**, open a course's **강의콘텐츠** tab (https://canvas.skku.edu/courses/<id>/external_tools/…, reached from https://icampus.skku.edu/ → 나의 과목) and expand a week. The klasnote controls (자동 처리 / 지금 요약) appear under each **recorded video** lecture's title. Zoom live sessions, files and audio-only items get no controls. 지금 요약 is enabled for lectures marked 학습 완료, or after the user has played the lecture once.
 
-The extension ID is fixed by `manifest.json` `key`: `klihhclhnhhmldcbnkpampimkjafmbdm`. The host only accepts this ID.
+The extension ID is fixed by `manifest.json` `key`: `ongnnbhdedfhijimkccikfdbkigemkfn`. The host only accepts this ID.
 
 ---
 
@@ -136,11 +136,11 @@ Note: if you run doctor inside a sandboxed app (rule 0.2), it can report ✔ whi
 | installer | Node.js LTS가 필요합니다 | Node not found | install Node, open a new window, re-run |
 | installer | Node.js 18 이상이 필요합니다(현재 … | old Node | install current LTS |
 | installer | 설치 파일 누락: … | broken extraction or antivirus removed files | extract again to a new folder |
-| installer | 다른 폴더가 이미 있습니다. 기존 파일을 보존하고 설치를 중단합니다. | `KlasSummarizer` folder not created by the installer | ask the user before renaming or moving it, then re-run |
+| installer | 다른 폴더가 이미 있습니다. 기존 파일을 보존하고 설치를 중단합니다. | `Jwsj` folder not created by the installer | ask the user before renaming or moving it, then re-run |
 | installer | 다른 네이티브 호스트가 등록되어 있습니다. 기존 등록을 보존합니다. | an older install elsewhere is registered | §6.2 |
 | installer | 지원하지 않는 설치 경로 문자 | `%` or `"` in the user or Node path | not supported |
-| Chrome | 매니페스트 파일이 없거나 읽을 수 없습니다 | wrong folder picked | choose `…\KlasSummarizer\extension` |
-| settings / panel | 연결 프로그램이 설치되지 않았어요 | host not registered (installer not run, or run inside a sandboxed app) | re-run the installer from Explorer/Terminal, then click ↻ on the klasnote card |
+| Chrome | 매니페스트 파일이 없거나 읽을 수 없습니다 | wrong folder picked | choose `…\Jwsj\extension` |
+| settings / panel | 연결 프로그램이 설치되지 않았어요 | host not registered (installer not run, or run inside a sandboxed app) | re-run the installer from Explorer/Terminal, then click ↻ on the 지우사랑해 card |
 | settings / panel | 연결 프로그램이 이 확장을 허용하지 않아요 | registration does not allow this extension ID | re-run the installer; load the installed `extension` folder |
 | settings / panel | 연결 프로그램이 실행되지 않았어요 | Node removed or moved since install | install Node LTS, re-run the installer |
 | settings | Groq API 키를 설정하거나 다시 확인하세요. | wrong or partially copied key | the user creates a new key and pastes the whole key |
@@ -155,13 +155,13 @@ Note: if you run doctor inside a sandboxed app (rule 0.2), it can report ✔ whi
 The installer will not overwrite a registration that points somewhere other than the standard install folder. The uninstall scripts refuse it too ("다른 호스트 등록이므로 삭제하지 않습니다"). This usually comes from an older developer or test install.
 
 1. Show where it points:
-   - Windows: `reg query "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host" /ve`
-   - macOS: `cat ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/com.klas_summarizer.host.json`
-2. Tell the user the path. Only if they confirm it is an old klasnote copy (or the path no longer exists), remove **only this one registration**:
+   - Windows: `reg query "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.jwsj.host" /ve`
+   - macOS: `cat ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/com.jwsj.host.json`
+2. Tell the user the path. Only if they confirm it is an old copy of this build (or the path no longer exists), remove **only this one registration**:
    ```bat
-   reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host" /f
+   reg delete "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.jwsj.host" /f
    ```
-   On macOS, delete just that one `com.klas_summarizer.host.json` file.
+   On macOS, delete just that one `com.jwsj.host.json` file.
 3. Re-run the installer.
 
 ### 6.3 Managed (school or company) PCs
@@ -177,7 +177,7 @@ Do not try to work around these. Tell the user to use a personal PC or ask their
 
 ## 7. Update and uninstall
 
-- **Update:** wait for running jobs to finish, extract the new ZIP, run the installer again, click ↻ on the klasnote card in `chrome://extensions`, then F5 any icampus tab. The saved Groq key is kept.
+- **Update:** wait for running jobs to finish, extract the new ZIP, run the installer again, click ↻ on the 지우사랑해 card in `chrome://extensions`, then F5 any icampus tab. The saved Groq key is kept.
 - **Uninstall:**
   1. Remove the card in `chrome://extensions`.
   2. Windows: run `powershell -ExecutionPolicy Bypass -File uninstall.ps1` from the extracted folder. macOS: run `sh uninstall.command`.
@@ -190,7 +190,7 @@ Do not try to work around these. Tell the user to use a personal PC or ask their
 
 | | Windows | macOS |
 |---|---|---|
-| Install folder | `%LOCALAPPDATA%\KlasSummarizer\` (`extension\`, `host.mjs`, `groq.mjs`, `host.bat`, `host-config.json`, `com.klas_summarizer.host.json`, `.klas-summarizer-host`, `.installed-version`) | `~/Library/Application Support/KlasSummarizer/` (same, with `host.sh`) |
-| Registration | `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.klas_summarizer.host` | `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.klas_summarizer.host.json` (and the same file under `KlasSummarizer/Chrome/NativeMessagingHosts/` for the dedicated-window mode) |
+| Install folder | `%LOCALAPPDATA%\Jwsj\` (`extension\`, `host.mjs`, `groq.mjs`, `host.bat`, `host-config.json`, `com.jwsj.host.json`, `.klas-summarizer-host`, `.installed-version`) | `~/Library/Application Support/Jwsj/` (same, with `host.sh`) |
+| Registration | `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.jwsj.host` | `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.jwsj.host.json` (and the same file under `Jwsj/Chrome/NativeMessagingHosts/` for the dedicated-window mode) |
 | Groq key | `groq-config.json` next to `host.mjs`, created by the settings page. **Never read it.** | same |
 | Results | the user's Downloads folder: `icampus요약/<과목>/<주차>_<강의명>.html` | same |

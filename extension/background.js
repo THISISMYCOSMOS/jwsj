@@ -4,7 +4,7 @@ import {SUMMARY_FORMAT} from './src/core/pack.js';
 import {SITE} from './src/site.js';
 
 const SELF=chrome.runtime.getURL('');
-const HOST='com.klas_summarizer.host';
+const HOST='com.jwsj.host';
 let storageTail=Promise.resolve(), engineCreation=null;
 const active=new Set(), deleted=new Set();
 const nativeJobs=new Map(),asrJobs=new Map();
