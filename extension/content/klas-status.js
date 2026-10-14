@@ -2,11 +2,11 @@
   if(document.querySelector('[data-klasnote-status]'))return;
   const host=document.createElement('span');host.dataset.klasnoteStatus='';
   const root=host.attachShadow({mode:'closed'}),style=document.createElement('style');
-  style.textContent=':host{display:inline-block;margin:4px 8px;font:12px system-ui}:host([data-floating]){position:fixed;right:16px;bottom:16px;margin:0;z-index:1000}:host([data-moved]){position:fixed;right:auto;bottom:auto;margin:0;z-index:1000}button{font:inherit;display:inline-flex;align-items:center;gap:6px;border:1px solid #c93d6f;border-radius:999px;background:#fffaf3;color:#a8325d;padding:5px 9px;cursor:grab;max-width:250px;touch-action:none;user-select:none}:host([data-dragging]) button{cursor:grabbing;box-shadow:0 4px 14px rgba(0,0,0,.18)}.dot{width:6px;height:6px;border-radius:50%;background:#999;flex:none}.dot[data-active]{background:#c93d6f}.grip{color:#e0779c;letter-spacing:-2px;margin-right:2px}button:focus-visible{outline:2px solid #c93d6f;outline-offset:2px}';
+  style.textContent=':host{display:inline-block;margin:4px 8px;font:12px system-ui}:host([data-floating]){position:fixed;right:16px;bottom:16px;margin:0;z-index:1000}:host([data-moved]){position:fixed;right:auto;bottom:auto;margin:0;z-index:1000}button{font:inherit;display:inline-flex;align-items:center;gap:6px;border:1px solid #f06292;border-radius:999px;background:#ffe4ef;color:#c2185b;padding:5px 9px;cursor:grab;max-width:250px;touch-action:none;user-select:none}:host([data-dragging]) button{cursor:grabbing;box-shadow:0 4px 14px rgba(0,0,0,.18)}.dot{width:6px;height:6px;border-radius:50%;background:#f8a5c2;flex:none}.dot[data-active]{background:#e91e63}.grip{color:#f06292;letter-spacing:-2px;margin-right:2px}button:focus-visible{outline:2px solid #e91e63;outline-offset:2px}';
   const button=document.createElement('button');button.type='button';button.title='클릭: 요약 상태와 사용방법 열기 · 끌기: 위치 옮기기';
   const grip=document.createElement('span');grip.className='grip';grip.textContent='⋮⋮';grip.setAttribute('aria-hidden','true');
   const dot=document.createElement('span');dot.className='dot';dot.setAttribute('aria-hidden','true');
-  const label=document.createElement('span');label.textContent='클라스노트 · 대기';label.setAttribute('role','status');
+  const label=document.createElement('span');label.textContent='지우노트 💗 · 대기';label.setAttribute('role','status');
   button.append(grip,dot,label);root.append(style,button);
   // KLAS는 상단 헤더에 붙인다. icampus(Canvas)의 #header는 왼쪽 세로 메뉴라 오른쪽 아래에 띄운다(끌어서 옮길 수 있음).
   const header=location.hostname==='klas.kw.ac.kr'?document.querySelector('header, #header'):null;
@@ -16,12 +16,12 @@
   async function refresh(){
     if(disposed||document.hidden)return;
     // 확장을 다시 불러오면 이 스크립트의 chrome API가 사라진다. 오류를 내지 않고 새로고침만 안내한다.
-    if(!chrome.runtime?.id){disposed=true;label.textContent='클라스노트 · 페이지 새로고침 필요';return;}
+    if(!chrome.runtime?.id){disposed=true;label.textContent='지우노트 💗 · 페이지 새로고침 필요';return;}
     try{
       const {counts,consent}=await send('getStatus');if(disposed)return;
       const text=!consent?'처음 설정':counts.active?`처리 중 ${counts.active}`:counts.ready?`확인 필요 ${counts.ready}`:counts.error?`오류 ${counts.error} · 눌러서 확인`:'대기';
-      label.textContent=`클라스노트 · ${text}`;dot.toggleAttribute('data-active',counts.active>0);
-    }catch{if(!disposed)label.textContent='클라스노트 · 연결 확인';}
+      label.textContent=`지우노트 💗 · ${text}`;dot.toggleAttribute('data-active',counts.active>0);
+    }catch{if(!disposed)label.textContent='지우노트 💗 · 연결 확인';}
   }
 
   // 끌어서 옮기기. 위치는 이 PC 브라우저에만 저장한다(statusPos). 화면 밖으로 나가지 않게 맞춘다.
