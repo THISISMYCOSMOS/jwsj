@@ -56,11 +56,11 @@ The ZIP is `downloads/jwsj-<version>.zip` in this repository (the README downloa
 
 Windows:
 ```powershell
-Expand-Archive -Path "$HOME\Downloads\jwsj-0.2.0.zip" -DestinationPath "$HOME\Downloads\jwsj-0.2.0" -Force
+Expand-Archive -Path "$HOME\Downloads\jwsj-0.2.1.zip" -DestinationPath "$HOME\Downloads\jwsj-0.2.1" -Force
 ```
 macOS:
 ```sh
-ditto -x -k ~/Downloads/jwsj-0.2.0.zip ~/Downloads/jwsj-0.2.0
+ditto -x -k ~/Downloads/jwsj-0.2.1.zip ~/Downloads/jwsj-0.2.1
 ```
 Verify: the extracted folder contains `install.cmd` / `install.command`, `extension/`, `scripts/`, `native-host/`.
 

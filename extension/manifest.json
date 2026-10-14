@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "지우사랑해",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "minimum_chrome_version": "116",
   "description": "Groq로 강의를 받아쓰고, 본인 Claude/Codex 계정으로 선택한 강의의 요약 노트를 만듭니다.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu+52Z8tZv2Xj8lnAJ5h0r+IxP3z0zm9ixeYc3vxo7gVtedQjJ22BvO8TKzSpu8QZ/iEDjOZl4x62xic9vZo6VjbOWpIfmAG/GNGpXjqjngulED/q7QL5bBRMPq4DLbVKET3MLsl1UmZXvOWIPNwIRuRHPR3VGRKzd9sNRgwNkXKPLhGzU7UH+/vf+gCah36y8XuPP0jGqP4G3/AEugpJJPGsMoM4GQEkeZRz90Vz97SLRfFgpARggu/HG7GhvhM8zz9wDsw3z9wiQjdDGTy3ImW7anwEdpT0SOG4fq3BZcXBfviN/+lHj2iP6kKFGo84hSe3ckxErpDWh/Ga3fNzqwIDAQAB",

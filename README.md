@@ -8,7 +8,9 @@
 > 비공식 개인 학습용 도구입니다. 출석·진도·인증에는 손대지 않습니다.
 > 설치·사용 전에 **[사용 금지 사항](#9-사용-금지-사항-꼭-읽어-주세요)** 을 꼭 읽어 주세요. 사용하면 이에 동의한 것으로 봅니다.
 
-### [⬇ 설치 파일 받기 — jwsj-0.2.0.zip (Windows · Mac 공용)](downloads/jwsj-0.2.0.zip?raw=true)
+### [⬇ 설치 파일 받기 — jwsj-0.2.1.zip (Windows · Mac 공용)](downloads/jwsj-0.2.1.zip?raw=true)
+
+> 다른 PC에 설치하거나 오류가 나면 **[설치·오류 가이드(TROUBLESHOOTING.md)](TROUBLESHOOTING.md)** 를 보세요. 화면에 보인 오류 문구로 해결 방법을 찾을 수 있어요.
 
 ![결과 파일 예시](docs/images/05-report.png)
 
@@ -38,7 +40,7 @@
 ### Windows
 
 1. **ZIP 압축 풀기**
-   - 받은 `jwsj-0.2.0.zip`을 **마우스 오른쪽 버튼 → 모두 압축 풀기 → 압축 풀기**로 풉니다.
+   - 받은 `jwsj-0.2.1.zip`을 **마우스 오른쪽 버튼 → 모두 압축 풀기 → 압축 풀기**로 풉니다.
    - ZIP을 더블클릭해 안에 보이는 `install.cmd`를 바로 실행하면 안 돼요. 그러면 "압축을 풀지 않은 상태에서 실행했습니다"가 뜹니다.
    - ✅ 확인: 풀린 `jwsj` 폴더 안에 `install.cmd`, `extension`, `scripts`, `native-host` 폴더가 보여요.
 2. **`install.cmd` 실행**
